@@ -524,6 +524,7 @@ function updateAndSavePlayerData(ctx, playerData) {
 }
 
 
+
 /**
  * 功能函数：更新并保存玩家背包数据
  * @param {Object} ctx 上下文对象，包含调用环境和用户信息
@@ -699,8 +700,7 @@ function updatePlayerHunt(ctx, msg, playerData, amount) {
  */
 function updatePlayerWeapon(ctx, msg, weaponId) {
   const groupId = ctx.group.groupId;
-  const playerData = ctx.player;
-  const playerId = playerData.userId;
+  const playerId = ctx.player.userId;
 
   // 尝试获取 playersData
   const playersDataRaw = ext.storageGet(`playersData_${groupId}`);
@@ -711,6 +711,7 @@ function updatePlayerWeapon(ctx, msg, weaponId) {
   }
 
   let playersData = JSON.parse(playersDataRaw);
+  const playerData = playersData[`player${playerId}`];
 
   if (!playerData) {
       console.error("Player data is null or undefined.");
@@ -723,18 +724,9 @@ function updatePlayerWeapon(ctx, msg, weaponId) {
   // 获取武器名称
   const weapon = getWeaponById(weaponId);
 
-  if(weapon){
-    // 更新指定玩家的数据
-    playersData[`player${playerId}`] = playerData;
+  updateAndSavePlayerData(ctx, playerData)
 
-    // 存储更新后的玩家数据
-    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
-
-    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你已经更换到新武器：${weapon.weapon_name}。`);
-  }
-  else{
-    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：武器id超出预计不正确，为${weaponId}`);
-  }
+  seal.replyToSender(ctx, msg, `<${playerData.role_name}>你已经更换到新武器：${weapon.weapon_name}。`);
 }
 
 /**
@@ -746,8 +738,7 @@ function updatePlayerWeapon(ctx, msg, weaponId) {
  */
 function updatePlayerEyeColor(ctx, msg, eyeColor){
   const groupId = ctx.group.groupId;
-  const playerData = ctx.player;
-  const playerId = playerData.userId;
+  const playerId = ctx.player.userId;
 
   // 尝试获取 playersData
   const playersDataRaw = ext.storageGet(`playersData_${groupId}`);
@@ -758,6 +749,7 @@ function updatePlayerEyeColor(ctx, msg, eyeColor){
   }
 
   let playersData = JSON.parse(playersDataRaw);
+  const playerData = playersData[`player${playerId}`];
 
   if (!playerData) {
       console.error("Player data is null or undefined.");
@@ -783,16 +775,16 @@ function updatePlayerEyeColor(ctx, msg, eyeColor){
  * @param {Object} msg 消息对象
  */
 function confirmDecision(ctx, msg) {
-    const playerData = ctx.player;
-    const playerId = playerData.userId;
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[`player${ctx.player.userId}`];
+  const playerId = ctx.player.userId;
 
     // 加载待处理的决定数据
     loadPendingDecisions(ctx);
 
     if (pendingDecisions[playerId]) {
       const decisionType = pendingDecisions[playerId].type;
-      const playersData = JSON.parse(ext.storageGet(`playersData_${ctx.group.groupId}`) || '{}');
-
       switch (decisionType) {
           case 'weaponDecision':
             const weaponId = pendingDecisions[playerId].weaponId;
@@ -817,7 +809,7 @@ function confirmDecision(ctx, msg) {
             seal.replyToSender(ctx, msg, goodbyeMessage);
               break;
           default:
-              seal.replyToSender(ctx, msg, "当前没有相关的决定需要处理。");
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前没有相关的决定需要处理。`);
               break;
       }
       // 清除玩家的待决定状态
@@ -825,7 +817,7 @@ function confirmDecision(ctx, msg) {
       savePendingDecisions(ctx); // 保存更新后的待决定数据
   } 
   else {
-      seal.replyToSender(ctx, msg, "没有待处理的决定或回复已失效。");
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：没有待处理的决定或回复已失效。`);
   }
 }
 
@@ -836,8 +828,10 @@ function confirmDecision(ctx, msg) {
  * @param {Object} msg 消息对象
  */
 function rejectDecision(ctx, msg) {
-    const playerData = ctx.player;
-    const playerId = playerData.userId;
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[`player${ctx.player.userId}`];
+  const playerId = ctx.player.userId;
 
     // 加载待处理的决定数据
     loadPendingDecisions(ctx);
@@ -1780,27 +1774,27 @@ cmdUseHealItem.solve = (ctx, msg, cmdArgs) => {
     switch (itemName) {
         case "日落果":
             updatePlayerHP(ctx, msg, playerData, 4);
-            response = "你使用了日落果，+4 HP。";
+            response += "你使用了日落果，+4 HP。";
             itemId = 101;
             break;
         case "树莓":
             updatePlayerHP(ctx, msg, playerData, 3);
-            response = "你使用了树莓，+3 HP。";
+            response += "你使用了树莓，+3 HP。";
             itemId = 102;
             break;
         case "薄荷":
             updatePlayerSP(ctx, msg, playerData, 5);
-            response = "你使用了薄荷，+5 SP。";
+            response += "你使用了薄荷，+5 SP。";
             itemId = 103;
             break;
         case "应急伤药":
             updatePlayerHP(ctx, msg, playerData, 5);
             updatePlayerHunt(ctx, msg, playerData, -5);
-            response = "你使用了应急伤药，+5 HP，解除了所有负面状态。";
+            response += "你使用了应急伤药，+5 HP，解除了所有负面状态。";
             itemId = 104;
             break;
         default:
-            seal.replyToSender(ctx, msg, "该道具不能使用。");
+            seal.replyToSender(ctx, msg, `<${playerData.role_name}>：该道具不能使用。`);
             return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -1869,16 +1863,16 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
     if (mapStatus !== 1) {
       const randomResult = Math.floor(Math.random() * 100) + 1;
 
-      if (randomResult <= 16) {
-        // 1-16 获取特殊道具逻辑
+      if (randomResult <= 32) {
+        // 1-32 获取特殊道具逻辑
         handleSpecialItem(ctx, msg, playerData);
       } 
-      else if (randomResult <= 50) {
-        // 17-50 获取日常物品逻辑
+      else if (randomResult <= 60) {
+        // 37-60 获取日常物品逻辑
         handleCommonItem(ctx, msg, playerData);
       } 
-      else if (randomResult <= 100) {
-        // 51-78 获取武器逻辑
+      else if (randomResult <= 78) {
+        // 61-78 获取武器逻辑
         handleWeaponDiscovery(ctx, msg, playerData);
       } 
     //   else if (randomResult <= 97) {
@@ -1973,7 +1967,7 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
     const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
 
     if (isColorInMapDescription(playerColor, mapDescription)) {
-      response += `\n<${playerData.role_name}>：在踏入【目标地点】的瞬间，你发现你随身的【神之眼】微弱地闪了闪`;
+      response += `\n<${playerData.role_name}>：在踏入${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地闪了闪`;
     } 
 
     seal.replyToSender(ctx, msg, response);
@@ -1985,7 +1979,7 @@ ext.cmdMap['go'] = cmdGo;
 
 const cmdViewPendingDecisions = seal.ext.newCmdItemInfo();
 cmdViewPendingDecisions.name = 'showlist';
-cmdViewPendingDecisions.help = '系统指令： .viewpending 查看当前游戏内待处理的事件与事件对应的玩家角色名';
+cmdViewPendingDecisions.help = '系统指令： .showlist 查看当前游戏内待处理的事件与事件对应的玩家角色名';
 cmdViewPendingDecisions.solve = (ctx, msg, cmdArgs) => {
     if (!ctx.group || !ctx.group.groupId) {
         seal.replyToSender(ctx, msg, "此命令只能在群聊中使用。");
@@ -2027,9 +2021,12 @@ cmdAskQuestion.solve = (ctx, msg, cmdArgs) => {
         return seal.ext.newCmdExecuteResult(true);
     }
 
-    const groupId = ctx.group.groupId;
     const playerId = ctx.player.userId;
     const question = cmdArgs.getArgN(1);
+
+    const groupId = ctx.group.groupId;
+    const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+    const playerData = playersData[`player${ctx.player.userId}`];
 
     // 加载待处理的决定数据
     loadPendingDecisions(ctx);
@@ -2038,11 +2035,13 @@ cmdAskQuestion.solve = (ctx, msg, cmdArgs) => {
     if (pendingDecisions[playerId] && pendingDecisions[playerId].type === 'askDecision') {
         let response = ``;
         if (question.includes("钟离")) {
-            response += `在你又一次认为祂不会开口之时，你猛然看见有血泪自兜帽下的阴影中流下，四肢关节渗出鲜血似人偶般扭曲，像是耗尽全力般一字一顿：“用眼……去神注视的……禁区。”
+            response += `<${playerData.role_name}>:
+在你又一次认为祂不会开口之时，你猛然看见有血泪自兜帽下的阴影中流下，四肢关节渗出鲜血似人偶般扭曲，像是耗尽全力般一字一顿：“用眼……去神注视的……禁区。”
 尾音落下，那破碎身形瞬间消失在空中，仿佛从未来过。
 ————【天理代行】已离去————`;
         } else {
-            response = "……";
+            response = `<${playerData.role_name}>:
+“……”`;
         }
 
         // 发送回复
