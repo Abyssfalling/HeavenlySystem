@@ -27,9 +27,11 @@ const ruleText = `
     .showmap    查询大地图
     .showmyrole 查询自身属性
     .showbag    查看背包
+    .showlist   查看当前待处理事件
 
     .explore    探索当前区域
-    .useheal X  使用背包中存在的恢复类道具，X为道具名称
+    .go X       向指定方向移动，X为up、down、left、right之一
+    .use X      使用背包中存在的道具，X为道具名称
 
 `;
 
@@ -70,6 +72,36 @@ var roleCards = [
 
 let roleCardsCopy = [...roleCards];  // 创建角色卡的副本
 
+
+/**
+ * 功能函数：解绑并清除角色卡
+ * @param {Object} ctx 
+ * @param {Object} msg 
+ * @param {string} playerId 玩家ID
+ */
+function handleDeleteRole(ctx, msg, playerId){
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[`player${playerId}`];
+  console.log(`正在处理的playerId：${playerId}`);
+  
+  // 重置角色卡并放回角色卡池（使用 roleCardsCopy）
+  let roleCardsCopy = JSON.parse(ext.storageGet('roleCardsCopy') || '[]');
+  const resetRole = { ...playerData, player_id: undefined, player_HP: playerData.role_HP_Max, player_SP: playerData.role_SP_Max };
+  roleCardsCopy.push(resetRole);
+  ext.storageSet('roleCardsCopy', JSON.stringify(roleCardsCopy));
+
+  // 删除玩家当前的角色信息
+  delete playersData[`player${playerId}`];
+
+  // 删除玩家的背包物品
+  let bagData = JSON.parse(ext.storageGet('bagData') || '[]');
+  bagData = bagData.filter(entry => entry.bag_vs_player !== playerId);
+  ext.storageSet('bagData', JSON.stringify(bagData));
+
+  // 更新并保存玩家数据
+  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+}
 
 var mapData = [
     {
@@ -586,31 +618,67 @@ function removeItemFromBag(ctx, playerId, itemId) {
   updateAndSaveBagData(ctx, playerId, itemId, -1);
 }
 
-
   
 /**
-   * 功能函数：处死玩家
+ * 功能函数：处理玩家死亡
+ * @param {Object} ctx 上下文对象
+ * @param {Object} msg 消息对象
+ * @param {string} playerId 玩家ID
+ */
+function handlePlayerDeath(ctx, msg, playerId) {
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[`player${playerId}`];
+
+  console.log(`处理玩家死亡，玩家ID: ${playerId}`);
+
+  if (!playerData) {
+      console.error(`未找到玩家ID ${playerId} 的数据。`);
+      seal.replyToSender(ctx, msg, `未找到玩家ID ${playerId} 的数据。`);
+      return;
+  }
+
+  // 发布玩家死亡消息
+  seal.replyToSender(ctx, msg, `玩家 ${playerData.role_name} 已死亡。`);
+
+  // 从玩家数据中移除角色
+  handleDeleteRole(ctx, msg, playerId);
+}
+
+
+
+/**
+   * 功能函数：玩家因战斗死亡
+   * @param {Object} ctx 上下文对象
+   * @param {Object} msg 消息对象
    * @param {Object} player 玩家对象
    */
-function killPlayer(player) {
-  // distroyrole
-  // player.player_living = 0;
-  // player.player_color = 0;
-  // player.player_HP = 0;
-  // player.player_SP = 0;
-  // player.player_round = 0;
-  // player.player_weapon_id = 0;
-  // player.player_map_id = 0;
-  // player.player_fight_skip = 0;
-  // player.player_fight_drainLife = 0;
-  // player.player_fight_strengthen = 0;
-  // player.player_fight_weaken = 0;
-  // player.player_fight_rebound = 0;
-  // player.player_fight_hunt = 0;
-  // player.player_fight_creativeHP = 0;
-  seal.replyToSender(ctx, msg, `玩家HP归零，死亡`);
+function handlePlayerFightDeath(ctx, playerId) {
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[playerId];
 
-  //死神技能检查？
+  if (!playerData) {
+      console.error("无法找到玩家数据。");
+      return;
+  }
+
+  // 1. 更新玩家状态为死亡
+  playerData.player_living = 0;
+
+  // 2. 获得玩家背包战利品
+  const bagData = JSON.parse(ext.storageGet('bagData') || '[]');
+  const newBagData = bagData.filter(item => item.bag_vs_player !== playerId);
+  ext.storageSet('bagData', JSON.stringify(newBagData));
+
+  // 3.处理玩家武器
+
+  // 4. 彻底移除该玩家
+  delete playersData[`player${playerId}`];
+  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+
+  // 5. 公告
+  seal.replyToSender(ctx, msg, `玩家 ${playerData.role_name} 已被击杀。`);
 }
 
 
@@ -632,7 +700,7 @@ function updatePlayerHP(ctx, msg, playerData, amount) {
       playerData.player_HP = playerData.role_HP_Max;
   } else if (playerData.player_HP < 0) {
       playerData.player_HP = 0;
-      killPlayer(ctx, msg, playerData);
+      // 处死玩家逻辑
   }
 
   updateAndSavePlayerData(ctx, playerData);
@@ -1434,26 +1502,27 @@ cmdEndDay.solve = (ctx, msg, cmdArgs) => {
   // 关闭禁区，清理玩家
   for (let i = 1; i <= 16; i++) {
     if (gameData[`game_map${i}`] === -1) {
-      gameData[`game_map${i}`] = 1;  // Close the area
+      gameData[`game_map${i}`] = 1; 
       const areaName = mapData[i-1].map_name;
       seal.replyToSender(ctx, msg, `【${areaName}】已关闭。${mapData[i-1].map_discri_forbid}`);
 
       // 清理玩家
-      Object.values(playersData).forEach(player => {
-        if (player.player_map_id === i) {
-          killPlayer(player);
-          seal.replyToSender(ctx, msg, `${player.role_name}因未及时离开禁区，死亡。`);
+      Object.values(playersData).forEach(playerData => {
+        if (playerData.player_map_id === i) {
+          console.log(`正在处理玩家id：${playerData.player_id}`);
+          handlePlayerDeath(ctx, msg, playerData.player_id);
+          seal.replyToSender(ctx, msg, `${playerData.role_name}因未及时离开禁区，死亡。`);
         }
       });
+      // ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
     }
   }
 
   ext.storageSet(`gameData_${groupId}`, JSON.stringify(gameData));
-  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
 
   const delay = 3000;
   setTimeout(() => {
-    seal.replyToSender(ctx, msg, `当前天数：${gameData.game_day}；结算完毕，禁区滞留玩家已清理。`);
+    seal.replyToSender(ctx, msg, `当前天数：${gameData.game_day}；该天结算完毕，禁区滞留玩家已清理。`);
   }, delay);
 
   return seal.ext.newCmdExecuteResult(true);
@@ -1617,34 +1686,13 @@ cmdUnassignRole.solve = (ctx, msg, cmdArgs) => {
         seal.replyToSender(ctx, msg, "你当前没有绑定任何角色。");
         return seal.ext.newCmdExecuteResult(true);
     }
-
-    // 重置角色卡并放回角色卡池（修改为使用 roleCardsCopy）
-    let roleCardsCopy = JSON.parse(ext.storageGet('roleCardsCopy') || '[]');
-    const resetRole = { ...playerData, player_id: undefined, player_HP: playerData.role_HP_Max, player_SP: playerData.role_SP_Max };
-    roleCardsCopy.push(resetRole);
-    ext.storageSet('roleCardsCopy', JSON.stringify(roleCardsCopy));
-
-    // 删除玩家当前的角色信息
-    delete playersData[`player${playerId}`];
-
-    // 删除玩家的背包物品
-    let bagData = JSON.parse(ext.storageGet('bagData') || '[]');
-    bagData = bagData.filter(entry => entry.bag_vs_player !== playerId);
-    ext.storageSet('bagData', JSON.stringify(bagData));
-
-    // 如果需要删除玩家的武器数据，可以在这里添加相关逻辑
-    // 示例代码：
-    // let weaponData = JSON.parse(ext.storageGet('weaponData') || '[]');
-    // weaponData = weaponData.filter(entry => entry.weapon_owner !== playerId);
-    // ext.storageSet('weaponData', JSON.stringify(weaponData));
-
-    // 更新并保存玩家数据
-    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
-
-    seal.replyToSender(ctx, msg, "你的角色卡已解绑并重置，现在可供其他玩家抽取。");
+    handleDeleteRole(ctx, msg, playerId);
+    seal.replyToSender(ctx, msg, "你的角色卡已解绑并重置。");
+    
     return seal.ext.newCmdExecuteResult(true);
 };
 ext.cmdMap['distroyrole'] = cmdUnassignRole;
+
 
 
 const cmdShowMap = seal.ext.newCmdItemInfo();
@@ -1855,48 +1903,47 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
   const playerMapIndex = playerData.player_map_id - 1;
   const mapStatus = gameData[`game_map${playerMapIndex + 1}`];
 
-  // 行动点是否充足
-  if (playerData.player_round > 0) {
-    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+  // 判断是否行动点足够
+  if (playerData.player_round <= 0){
+    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：探索失败：行动点不足`);
+    return seal.ext.newCmdExecuteResult(true);
+  }
+    
+  // 非禁区探索
+  if (mapStatus !== 1) {
+    const randomResult = Math.floor(Math.random() * 100) + 1;
 
-    // 非禁区探索
-    if (mapStatus !== 1) {
-      const randomResult = Math.floor(Math.random() * 100) + 1;
-
-      if (randomResult <= 32) {
-        // 1-32 获取特殊道具逻辑
-        handleSpecialItem(ctx, msg, playerData);
-      } 
-      else if (randomResult <= 60) {
-        // 37-60 获取日常物品逻辑
-        handleCommonItem(ctx, msg, playerData);
-      } 
-      else if (randomResult <= 78) {
-        // 61-78 获取武器逻辑
-        handleWeaponDiscovery(ctx, msg, playerData);
-      } 
-    //   else if (randomResult <= 97) {
-    //     // 78-97 遭遇其他玩家
-    //     handlePlayerEncounter(ctx, msg, playerData);
-    //   } 
-      else if (randomResult <= 100){
-        // 98-100 遭遇【天理代行】
-        handleExploreEncounterAgent(ctx, msg, playerData);
-      }
-      else{
-        seal.replyToSender(ctx, msg, `测试结果：一无所获。`);
-      }
-
+    if (randomResult <= 32) {
+      // 1-32 获取特殊道具逻辑
+      handleSpecialItem(ctx, msg, playerData);
     } 
-    else {
-      seal.replyToSender(ctx, msg, `当前区域是禁区，无法探索。`);
+    else if (randomResult <= 60) {
+      // 37-60 获取日常物品逻辑
+      handleCommonItem(ctx, msg, playerData);
+    } 
+    else if (randomResult <= 78) {
+      // 61-78 获取武器逻辑
+      handleWeaponDiscovery(ctx, msg, playerData);
+    } 
+  //   else if (randomResult <= 97) {
+  //     // 78-97 遭遇其他玩家
+  //     handlePlayerEncounter(ctx, msg, playerData);
+  //   } 
+    else if (randomResult <= 100){
+      // 98-100 遭遇【天理代行】
+      handleExploreEncounterAgent(ctx, msg, playerData);
     }
-  
-    // playerData.player_round -= 1;
+    else{
+      seal.replyToSender(ctx, msg, `测试结果：一无所获。`);
+    }
+
   } 
   else {
-    seal.replyToSender(ctx, msg, `当前行动点数不足。`);
+    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前区域是禁区。`);
   }
+
+  playerData.player_round -= 1;
+  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
 
   return seal.ext.newCmdExecuteResult(true);
 };
@@ -1905,7 +1952,7 @@ ext.cmdMap['explore'] = cmdExplore;
 
 const cmdGo = seal.ext.newCmdItemInfo();
 cmdGo.name = 'go';
-cmdGo.help = '玩家指令： .go <方向> 移动至指定方向的相邻区域，方向为上/下/左/右';
+cmdGo.help = '玩家指令： .go <方向> 移动至指定方向的相邻区域，方向为up、down、left、right之一';
 cmdGo.solve = (ctx, msg, cmdArgs) => {
     if (!ctx.group || !ctx.group.groupId) {
         seal.replyToSender(ctx, msg, "此命令只能在群聊中使用。");
@@ -1918,8 +1965,14 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
     const playerData = playersData[`player${ctx.player.userId}`];
 
     if (!playerData) {
-        seal.replyToSender(ctx, msg, "你还没有绑定任何角色。");
-        return seal.ext.newCmdExecuteResult(true);
+      seal.replyToSender(ctx, msg, "你还没有绑定任何角色。");
+      return seal.ext.newCmdExecuteResult(true);
+  }
+
+    // 检查当前玩家是否有待处理事件
+    if (hasPendingDecision(ctx)) {
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你有未处理的事件，请先回复该事件再继续移动。`);
+      return seal.ext.newCmdExecuteResult(true);
     }
 
     const mapIndex = playerData.player_map_id - 1; // map_id 是从1开始的，需要转换为0-based index
@@ -1927,26 +1980,32 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
     let col = mapIndex % 4; // 获取列号
 
     switch (direction) {
-        case '上':
+        case 'up':
             row--;
             break;
-        case '下':
+        case 'down':
             row++;
             break;
-        case '左':
+        case 'left':
             col--;
             break;
-        case '右':
+        case 'right':
             col++;
             break;
         default:
-            seal.replyToSender(ctx, msg, "无效的方向，必须是：上、下、左、右之一。");
+            seal.replyToSender(ctx, msg, `<${playerData.role_name}>：无效的方向，必须是：up、down、left、right之一。`);
             return seal.ext.newCmdExecuteResult(true);
+    }
+
+    // 判断是否行动点足够
+    if (playerData.player_round <= 0){
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：移动失败：行动点不足`);
+      return seal.ext.newCmdExecuteResult(true);
     }
 
     // 检查边界
     if (row < 0 || row > 3 || col < 0 || col > 3) {
-        seal.replyToSender(ctx, msg, "移动失败：超出地图边界。");
+        seal.replyToSender(ctx, msg, `<${playerData.role_name}>：移动失败：超出地图边界。`);
         return seal.ext.newCmdExecuteResult(true);
     }
 
@@ -1959,6 +2018,9 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
 
     const newMap = getMapById(new_mapId);
 
+    playerData.player_round -= 1;
+    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+
     response = `<${playerData.role_name}>：
 ————已从${Map.map_name}移出————
 ————已向${direction}移入${newMap.map_name}————`;
@@ -1967,7 +2029,7 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
     const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
 
     if (isColorInMapDescription(playerColor, mapDescription)) {
-      response += `\n<${playerData.role_name}>：在踏入${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地闪了闪`;
+      response += `\n在踏入${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地闪了闪`;
     } 
 
     seal.replyToSender(ctx, msg, response);
