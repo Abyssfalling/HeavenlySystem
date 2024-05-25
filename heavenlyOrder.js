@@ -44,7 +44,169 @@ if (!ext) {
 // 定义有效的神之眼属性
 var validElements = ['无', '风', '岩', '雷', '草', '水', '火', '冰'];
 
+// 获取指定编号地区情况
+function getMapStatusByMapId(ctx, mapId){
+  const groupId = ctx.group.groupId;
+  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  const mapStatus = gameData[`game_map${mapId}`];
 
+  return mapStatus;
+}
+
+// 判断暗线是否开启
+function getCovertIndex(ctx){
+  const groupId = ctx.group.groupId;
+  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  const covertIndex = gameData[`game_covert_index`];
+
+  return covertIndex;
+}
+
+// 判断代行是否下放
+function getCovertIndex(ctx){
+  const groupId = ctx.group.groupId;
+  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  const agentIndex = gameData[`game_agent_index`];
+
+  return agentIndex;
+}
+
+// 打表输出权限榜
+async function getPrivileges(ctx, msg){
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+
+  let response = `————权限榜————\n`;
+
+  Object.values(playersData).forEach(playerData => {
+    if (playerData.player_covert_privileges > 0) {
+      response += `${playerData.role_name}  ${playerData.player_covert_privileges}\n`;
+    }
+  });
+
+  await delay(10000);
+  seal.replyToSender(ctx, msg, response);
+}
+
+// 打表输出恶名榜
+async function getWanted(ctx, msg){
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+
+  let response = `————恶名榜————\n`;
+
+  Object.values(playersData).forEach(playerData => {
+    if (playerData.player_covert_wanted > 0) {
+      response += `${playerData.role_name}  ${playerData.player_covert_wanted}\n`;
+    }
+  });
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, response);
+}
+
+// 功能函数：延迟执行的Promise封装
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+// 触发暗线演出文案
+async function covertEnter(ctx, msg, playerId){
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `你立于禁区之中，手中的信物散发出柔和光晕，你看见周遭地脉生出光来，恍若流淌的黄金，旧日神明自中化形，朝你微微颔首。`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“你来了，我在这里等你很久了。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“契约之外的契约已经结束，很遗憾现在必须要告诉你残酷的事实：在这间“决斗场”里睁眼的灵魂，皆是曾在天空岛战役中无畏牺牲的先驱者。你们的苏醒与记忆的缺失并非巧合，在这里的每一个人都是七神体系的残余，拥有着“神的注视”。天理战后，我们原应同天理一并消散，将提瓦特重新还给人治。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“但天理并不止步于此，这里是法则残存所构筑的主场，厮杀会成为养分，作为重构天空岛的基石，唯一胜者将生还并荣登新的神座……而这并不是我们曾经所愿看到的。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“很遗憾，曾经并肩而战的神明仅剩我一人。时间的流逝在深渊下早已模糊不清，即使是我也不能确定到底过去了多久。其余同僚或因战死、或因磨损，已然归于尘土，消散在天地之间。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“——而你，已经来到此处，聆听完我这位“铭记者”口中的真相，我会尊重你的一切抉择。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“这位朋友，我的神之心能为你带来庇护，也是反抗天理的证明。一旦接过，祂将有所察觉。即刻起，知晓真相的你将为法则所不容，你可仍愿站在曾经的我们的身边？”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `【一枚磨损得不再光亮的岩神之心悬浮在他的手中，等待着你接过与否。】
+（提示：请使用.yes/.no指令进行选择）`);
+
+  // 记录玩家的决定待定状态
+  addPendingDecision(ctx, playerId, {
+    type: 'covertDecision'
+  });
+}
+
+// 开启暗线演出文案
+async function covertOpen(ctx, msg, playerId) {
+  const groupId = ctx.group.groupId;
+  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+
+  // 设置暗线开启状态
+  gameData[`game_covert_index`] = 1;
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“我代替提瓦特的所有，感谢你亲手选择的责任。接下来，你将在无尽的追杀中继续高举反叛的旗帜，但你无需单枪匹马。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“这枚摩拉，是我交予你的、寻找同行者的契约。当拥有神之眼的人选择收下这枚摩拉，他将成为你的同行之人。与此同时，仍部分摩拉散落在天理法则禁止涉足之处，拾起同样视为契约成立。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“接下来的时间，请在保证自己存活的前提下，搜集齐剩余的神之心吧，我会在新的契约终结之处等待你们的到来。这一次，我不会再容许祂的违约了。”`);
+
+  // 交付岩神之心
+  gameData[`game_heart6`] = playerId;
+  // 存储数据
+  ext.storageSet(`gameData_${groupId}`, JSON.stringify(gameData));
+  
+  // 增加暗线开启玩家的恶名
+  playerData.player_covert_wanted = 2;
+  updateAndSavePlayerData(ctx, playerData);
+
+  // 回复HP SP
+  updatePlayerHP(ctx, msg, playerId, playerData.role_HP_Max);
+  updatePlayerSP(ctx, msg, playerId, playerData.role_SP_Max);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你获得了岩神之心，HP、SP均已回满。`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `【警告】天理管理系统检测到不明数据越权行为`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“篡改历史的僭越之人，受到旧日的蒙蔽无可救赎。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“我现将所有人的次序回归正轨，低位者无法主动向高位者举起兵刃。”`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `“拥有权限之人，我赐予你纺织命运的能力，所有禁区将为你开放。僭越之人理应受到惩罚。猎杀他们，将他们的恶名转化为你们的权能，登上新神的王座吧，被天空岛选中的人。“`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `————系统更新中，暗线开启————
+新属性：【玩家阵营】、【系统权限】、【恶名】`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `[CQ:image,file=https://ajax-web-tlias.oss-cn-hangzhou.aliyuncs.com/heavenly/covertOpen.png,cache=0]`);
+
+  await delay(5000);
+  seal.replyToSender(ctx, msg, `————系统更新完毕，祝您游戏愉快————`);
+
+  getPrivileges(ctx, msg);
+  getWanted(ctx, msg);
+}
+
+
+// 初始化背包结构
 function initGameComponents() {
     // 初始化背包数据结构
     initBagData();
@@ -74,6 +236,19 @@ let roleCardsCopy = [...roleCards];  // 创建角色卡的副本
 
 
 /**
+ * 功能函数：通过玩家ID获得玩家数据
+ * @param {Object} ctx 
+ * @param {string} playerId 玩家ID
+ * @returns 
+ */
+function getPlayerDataByPlayerId(ctx, playerId){
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = playersData[`player${playerId}`];
+  return playerData;
+}
+
+/**
  * 功能函数：解绑并清除角色卡
  * @param {Object} ctx 
  * @param {Object} msg 
@@ -82,7 +257,7 @@ let roleCardsCopy = [...roleCards];  // 创建角色卡的副本
 function handleDeleteRole(ctx, msg, playerId){
   const groupId = ctx.group.groupId;
   const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[`player${playerId}`];
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
   console.log(`正在处理的playerId：${playerId}`);
   
   // 重置角色卡并放回角色卡池（使用 roleCardsCopy）
@@ -102,6 +277,7 @@ function handleDeleteRole(ctx, msg, playerId){
   // 更新并保存玩家数据
   ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
 }
+
 
 var mapData = [
     {
@@ -254,6 +430,36 @@ function isColorInMapDescription(playerColor, mapDiscriEye) {
   return colors.includes(playerColor.trim());
 }
 
+/**
+ * 功能函数：处理玩家不使用道具进入禁区
+ * @param {*} ctx 
+ * @param {*} playerId 
+ * @param {*} mapId 
+ */
+function handlePlayerEnterForbidWithoutItem(ctx, msg, playerId, mapId){
+  // const groupId = ctx.group.groupId;
+  // const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+  seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你选择不使用任何道具进入禁区\n`);
+
+  // 暗线未开启情况
+  if(!getCovertIndex(ctx)){
+    const playerColor = playerData.player_color; // 玩家的神之眼属性
+    const map = getMapById(mapId);
+    const mapDescription = map.map_discri_eye; // 当前地图的神之眼特定描述
+
+    // 神之眼匹配
+    if (isColorInMapDescription(playerColor, mapDescription)) {
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：黯淡的神之眼似是收了感召，再度亮起，你进入了禁区`);
+      return true;
+    } 
+
+    // 神之眼不匹配
+    else{
+      return false;
+    }
+  }
+}
 
 var itemData = [
     {
@@ -626,9 +832,9 @@ function removeItemFromBag(ctx, playerId, itemId) {
  * @param {string} playerId 玩家ID
  */
 function handlePlayerDeath(ctx, msg, playerId) {
-  const groupId = ctx.group.groupId;
-  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[`player${playerId}`];
+  // const groupId = ctx.group.groupId;
+  // const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
   console.log(`处理玩家死亡，玩家ID: ${playerId}`);
 
@@ -646,7 +852,6 @@ function handlePlayerDeath(ctx, msg, playerId) {
 }
 
 
-
 /**
    * 功能函数：玩家因战斗死亡
    * @param {Object} ctx 上下文对象
@@ -656,7 +861,7 @@ function handlePlayerDeath(ctx, msg, playerId) {
 function handlePlayerFightDeath(ctx, playerId) {
   const groupId = ctx.group.groupId;
   const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[playerId];
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
   if (!playerData) {
       console.error("无法找到玩家数据。");
@@ -689,7 +894,8 @@ function handlePlayerFightDeath(ctx, playerId) {
  * @param {Object} playerData 玩家的数据对象
  * @param {number} amount 要改变的HP量，可以是正数或负数
  */
-function updatePlayerHP(ctx, msg, playerData, amount) {
+function updatePlayerHP(ctx, msg, playerId, amount) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
   playerData.player_HP += amount;
 
   // 打印处理后的HP
@@ -715,7 +921,9 @@ function updatePlayerHP(ctx, msg, playerData, amount) {
  * @param {Object} playerData 玩家的数据对象
  * @param {number} amount 要改变的SP量，可以是正数或负数
  */
-function updatePlayerSP(ctx, msg, playerData, amount) {
+function updatePlayerSP(ctx, msg, playerId, amount) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+
   playerData.player_SP += amount;
 
   // 打印处理后的SP
@@ -741,7 +949,8 @@ function updatePlayerSP(ctx, msg, playerData, amount) {
  * @param {Object} playerData 玩家的数据对象
  * @param {number} amount 要改变的SP量，可以是正数或负数
  */
-function updatePlayerHunt(ctx, msg, playerData, amount) {
+function updatePlayerHunt(ctx, msg, playerId, amount) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
   playerData.player_fight_hunt += amount;
 
   // 打印处理后的hunt
@@ -767,25 +976,9 @@ function updatePlayerHunt(ctx, msg, playerData, amount) {
  * @param {number} weaponId 武器id
  */
 function updatePlayerWeapon(ctx, msg, weaponId) {
-  const groupId = ctx.group.groupId;
   const playerId = ctx.player.userId;
 
-  // 尝试获取 playersData
-  const playersDataRaw = ext.storageGet(`playersData_${groupId}`);
-  if (!playersDataRaw) {
-      console.error("Failed to retrieve playersData from storage.");
-      seal.replyToSender(ctx, msg, "无法获取玩家数据，请检查游戏是否正确初始化。");
-      return;
-  }
-
-  let playersData = JSON.parse(playersDataRaw);
-  const playerData = playersData[`player${playerId}`];
-
-  if (!playerData) {
-      console.error("Player data is null or undefined.");
-      seal.replyToSender(ctx, msg, "更新武器时，玩家数据无效，请检查游戏是否正确初始化。");
-      return;
-  }
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
   playerData.player_weapon_id = weaponId;
 
@@ -808,30 +1001,11 @@ function updatePlayerEyeColor(ctx, msg, eyeColor){
   const groupId = ctx.group.groupId;
   const playerId = ctx.player.userId;
 
-  // 尝试获取 playersData
-  const playersDataRaw = ext.storageGet(`playersData_${groupId}`);
-  if (!playersDataRaw) {
-      console.error("Failed to retrieve playersData from storage.");
-      seal.replyToSender(ctx, msg, "无法获取玩家数据，请检查游戏是否正确初始化。");
-      return;
-  }
-
-  let playersData = JSON.parse(playersDataRaw);
-  const playerData = playersData[`player${playerId}`];
-
-  if (!playerData) {
-      console.error("Player data is null or undefined.");
-      seal.replyToSender(ctx, msg, "更新神之眼时，玩家数据无效，请检查游戏是否正确初始化。");
-      return;
-  }
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
   playerData.player_color = eyeColor;
 
-  // 更新指定玩家的数据
-  playersData[`player${playerId}`] = playerData;
-
-  // 存储更新后的玩家数据
-  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+  updateAndSavePlayerData(ctx, playerData);
 
   seal.replyToSender(ctx, msg, `神之眼已更换至：${eyeColor}`);
 }
@@ -844,9 +1018,9 @@ function updatePlayerEyeColor(ctx, msg, eyeColor){
  */
 function confirmDecision(ctx, msg) {
   const groupId = ctx.group.groupId;
-  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[`player${ctx.player.userId}`];
   const playerId = ctx.player.userId;
+
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
     // 加载待处理的决定数据
     loadPendingDecisions(ctx);
@@ -859,6 +1033,9 @@ function confirmDecision(ctx, msg) {
             
             // 执行更换武器
             updatePlayerWeapon(ctx, msg, weaponId);
+
+            // 清除玩家的待决定状态
+            delete pendingDecisions[playerId];
             break;
 
           case 'eyeDecision':
@@ -867,6 +1044,11 @@ function confirmDecision(ctx, msg) {
 ————武器已赋予————
 获取武器：天空之刃`;
             seal.replyToSender(ctx, msg, weaponMessage);
+            // 清除玩家的待决定状态
+            delete pendingDecisions[playerId];
+
+            //隐藏计数：权限+1
+            playerData.player_covert_privileges += 1;
           
             // 修改玩家数据
             updatePlayerWeapon(ctx, msg, 12);
@@ -875,13 +1057,19 @@ function confirmDecision(ctx, msg) {
             const goodbyeMessage = `【天理代行】收走了你的神之眼，一言不发转身离去。
 ————神之眼已收缴————`;
             seal.replyToSender(ctx, msg, goodbyeMessage);
-              break;
+            
+            break;
+          
+          case 'covertDecision':
+            covertOpen(ctx, msg, playerId);
+            // 清除玩家的待决定状态
+            delete pendingDecisions[playerId];
+            break;
+
           default:
-              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前没有相关的决定需要处理。`);
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前决定不需要执行.yes指令响应。`);
               break;
       }
-      // 清除玩家的待决定状态
-      delete pendingDecisions[playerId];
       savePendingDecisions(ctx); // 保存更新后的待决定数据
   } 
   else {
@@ -897,9 +1085,8 @@ function confirmDecision(ctx, msg) {
  */
 function rejectDecision(ctx, msg) {
   const groupId = ctx.group.groupId;
-  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[`player${ctx.player.userId}`];
   const playerId = ctx.player.userId;
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
     // 加载待处理的决定数据
     loadPendingDecisions(ctx);
@@ -911,27 +1098,50 @@ function rejectDecision(ctx, msg) {
         switch (decisionType) {
             case 'weaponDecision':
               seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你决定放弃该武器让它留在原地。`);
+
               // 清除玩家的待决定状态
               delete pendingDecisions[playerId];
               break;
+
             case 'eyeDecision':
               const questionMessage = `<${playerData.role_name}>：
 你看见兜帽遮面的【天理代行】陷入沉默，在你以为祂不会说话的瞬间，你听见了截然不同的沙哑声线。
  “一个问题。”祂说。
  “你可以问我一个问题。
 （系统提示：可使用.ask <询问内容> 指令发问)”`;
+
               // 记录玩家的决定待定状态
               addPendingDecision(ctx, playerId, {
-              type: 'askDecision'
+                type: 'askDecision'
               });
+              
               seal.replyToSender(ctx, msg, questionMessage);
               break;
+            
+            case 'goForbidDecision':
+              // 执行不使用道具的禁区进入判断
+              if(handlePlayerEnterForbidWithoutItem(ctx, msg, playerId, pendingDecisions[playerId].mapId)){
+                // 进入禁区
+                playerData.player_map_id = pendingDecisions[playerId].mapId;
+                updateAndSavePlayerData(ctx, playerData);
+
+                // 清除玩家的待决定状态
+                delete pendingDecisions[playerId];
+
+                // 执行暗线开启函数    
+                covertEnter(ctx, msg, playerId);
+              }
+              else{
+                seal.replyToSender(ctx, msg, `玩家<${playerData.role_name}>擅闯禁区，死亡。`);
+                handlePlayerDeath(ctx, msg, playerId);
+              }
+              break;
+              
+
             default:
-              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前没有相关的决定需要处理。`);
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前决定不需要执行.no指令响应。`);
               break;
         }
-
-        
         savePendingDecisions(ctx); // 保存更新后的待决定数据
     } 
     else {
@@ -946,15 +1156,17 @@ function rejectDecision(ctx, msg) {
  * @param {Object} msg 消息对象
  * @param {Object} playerData 玩家数据
  */
-function handleSpecialItem(ctx, msg, playerData) {
+function handleSpecialItem(ctx, msg, playerId) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
   const itemID = Math.floor(Math.random() * 16) + 1;
   const item = getItemById(itemID);
+
   if (!item) {
       seal.replyToSender(ctx, msg, `<${playerData.role_name}>：未找到对应的特殊道具。`);
       return;
   }
 
-  addItemToBag(ctx, playerData.player_id, itemID);
+  addItemToBag(ctx, playerId, itemID);
 
   seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你获得了特殊道具: ${item.item_name} —— ${item.item_discribe}`);
 }
@@ -967,33 +1179,16 @@ function handleSpecialItem(ctx, msg, playerData) {
    * @param {Object} playerData 玩家数据
    * @param {number} randomResult 随机数结果
    */
-function handleCommonItem(ctx, msg, playerData) {
-  // 17-50 获取日常物品处理
-
+function handleCommonItem(ctx, msg, playerId) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
   const itemID = Math.floor(Math.random() * 4) + 101;
   const item = getItemById(itemID);
   let response = `<${playerData.role_name}>：你获得了恢复类食物：${item.item_name}。`;
-  let healAmount = 0;
 
-  if (itemID == 101) {
-    healAmount = 4;
-    response += `使用后可 +${healAmount}HP`
-  } 
-  else if (itemID == 102) {
-    healAmount = 3;
-    response += `使用后可 +${healAmount}HP`
-  } 
-  else if (itemID == 103) {
-    healAmount = 5;
-    response += `使用后可 +${healAmount}SP`
-  } 
-  else if (itemID == 104) {
-    healAmount = 4;
-    response += `使用后可 +${healAmount}HP，并解除负面状态`
-  }
+  response += `${item.item_discribe}`;
 
   // 将物品添加到背包
-  addItemToBag(ctx, playerData.player_id, itemID);
+  addItemToBag(ctx, playerId, itemID);
 
   seal.replyToSender(ctx, msg, response);
 }
@@ -1005,7 +1200,9 @@ function handleCommonItem(ctx, msg, playerData) {
    * @param {Object} playerData 玩家数据
    * @param {number} randomResult 随机结果，用于确定发现哪种武器
    */
-function handleWeaponDiscovery(ctx, msg, playerData) {
+function handleWeaponDiscovery(ctx, msg, playerId) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+
   let weaponId = Math.floor(Math.random() * 5) + 2;
 
   // 获取武器信息
@@ -1031,35 +1228,35 @@ function handleWeaponDiscovery(ctx, msg, playerData) {
    * @param {Object} msg 消息对象
    * @param {Object} playerData 玩家数据
    */
-function handlePlayerEncounter(ctx, msg, playerData) {
-    // 78-97 遭遇其他玩家
+function handlePlayerEncounter(ctx, msg, playerId) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
     
-    // 获取群组ID和当前游戏数据
-    const groupId = ctx.group.groupId;
-    const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
+  // 获取群组ID和当前游戏数据
+  const groupId = ctx.group.groupId;
+  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
 
-    // 找到除当前玩家外同一地图的其他活跃玩家
-    const otherPlayers = Object.values(playersData).filter(p =>
-      p.player_id !== ctx.player.userId && // 确保不是当前玩家
-      p.player_map_id === playerData.player_map_id && // 同一地图
-      p.player_living === 1 // 仍活着
-    );
+  // 找到除当前玩家外同一地图的其他活跃玩家
+  const otherPlayers = Object.values(playersData).filter(p =>
+    p.player_id !== ctx.player.userId && // 确保不是当前玩家
+    p.player_map_id === playerData.player_map_id && // 同一地图
+    p.player_living === 1 // 仍活着
+  );
   
-    if (otherPlayers.length > 0) {
-      const encounteredPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]; // 随机遭遇一个玩家
-      seal.replyToSender(ctx, msg, `你遭遇了玩家 ${encounteredPlayer.role_name}，是否发起战斗？回复【是】或【否】`);
+  if (otherPlayers.length > 0) {
+    const encounteredPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)]; // 随机遭遇一个玩家
+    seal.replyToSender(ctx, msg, `你遭遇了玩家 ${encounteredPlayer.role_name}，是否发起战斗？
+    （提示：请使用.yes/.no）`);
   
-      // 存储等待玩家的回复
-      awaitingResponses[player_id] = {
-        type: 'battleDecision',
-        opponentId: encounteredPlayer.player_id,
-        initiator: true
-      };
-    } 
-    else {
-      seal.replyToSender(ctx, msg, "你一无所获。");
-    }
+    // 存储等待玩家的回复
+    awaitingResponses[player_id] = {
+      type: 'encounterDecision',
+      opponentId: encounteredPlayer.player_id,
+    };
+  } 
+  else {
+    seal.replyToSender(ctx, msg, "你一无所获。");
   }
+}
   
 
 /**
@@ -1068,28 +1265,45 @@ function handlePlayerEncounter(ctx, msg, playerData) {
    * @param {Object} msg 消息对象
    * @param {Object} playerData 玩家数据
    */
-function handleExploreEncounterAgent(ctx, msg, playerData) {
-    let promptMessage = `<${playerData.role_name}>：
+function handleExploreEncounterAgent(ctx, msg, playerId) {
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+  let promptMessage = ``;
+
+  // 暗线未开启
+  if(!getCovertIndex(ctx)){
+    promptMessage += `<${playerData.role_name}>：
 ————兜帽遮面的【天理代行】降临在你的面前————\n`;
 
+    // 玩家持有神之眼
     if(playerData.player_color != '无'){
       promptMessage += `【天理代行】向你伸出手，你发觉祂在看你的神之眼。
 是否交出神之眼？请回复指令.yes/.no`;
 
-    // 记录玩家的决定待定状态
-    addPendingDecision(ctx, playerData.player_id, {
-      type: 'eyeDecision'
-  });
+      // 记录玩家的决定待定状态
+      addPendingDecision(ctx, playerData.player_id, {
+        type: 'eyeDecision'
+      });
     }
+
+    // 玩家已交出神之眼
     else{
       promptMessage += `【天理代行】向你伸出手，像是对你勇气与幸运的嘉许。
 HP+20，SP+20
 ————【天理代行】一言不发地转身离去————`
-      updatePlayerHP(ctx, playerData, 20);
+      updatePlayerHP(ctx, playerId, 20);
     }
-
-    seal.replyToSender(ctx, msg, promptMessage);
+  seal.replyToSender(ctx, msg, promptMessage);
   }
+
+  // 暗线已开启
+  else{
+    // 玩家属于旧阵营
+    promptMessage += `你猛地抬头，黑红方块从天而降，所有的反抗在神罚前看起来都是妄想，在你来得及反应前的瞬间便已迫至面前——
+——神罚停下了。因一对水凝冰铸的刀刃。
+你看见遮面的兜帽滑落，露出【天理代行】的面容，无光眼瞳、至冬样貌，过量的鲜血自祂——不，他的四肢关节溢出，顺着无形丝线一滴一滴往下滑落。
+而后那人与神罚一并消失在空中，万籁俱寂，仿佛从未有人来过。只有地上残留血迹昭示着，这一切并不是你的幻觉。`
+  }
+}
     
 
 const cmdShowRules = seal.ext.newCmdItemInfo();
@@ -1278,15 +1492,8 @@ cmdForceUnassignRole.solve = (ctx, msg, cmdArgs) => {
     return seal.ext.newCmdExecuteResult(true);
   }
 
-  // 重置角色卡并放回角色卡池的副本
-  const resetRole = {...playerData, player_id: undefined, player_HP: playerData.role_HP_Max, player_SP: playerData.role_SP_Max};
-  roleCardCopy.push(resetRole);
-  ext.storageSet('roleCards', JSON.stringify(roleCardCopy));
-
-  // 删除目标玩家的角色信息
-  delete playersData[`player${targetPlayerId}`];
-  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
-
+  handleDeleteRole(ctx, msg, playerId);
+  
   seal.replyToSender(ctx, msg, `玩家${targetPlayerId}的角色卡已被强制解绑并重置。`);
   return seal.ext.newCmdExecuteResult(true);
 };
@@ -1310,24 +1517,11 @@ cmdResetAllRoles.solve = (ctx, msg, cmdArgs) => {
   }
 
   let playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  let bagData = JSON.parse(ext.storageGet('bagData') || '[]');
-  let weaponData = JSON.parse(ext.storageGet('weaponData') || '[]'); // 如果需要清空武器数据
 
   // 重置所有角色卡并清除对应的背包和武器数据
   Object.keys(playersData).forEach(playerId => {
-    // 清除背包数据
-    bagData = bagData.filter(entry => entry.bag_vs_player !== playerId);
-
-    // 清除武器数据 - 根据具体实现确定是否需要清除或重置
-    // weaponData = weaponData.filter(entry => entry.weapon_owner !== playerId); // 示例代码，如果有需要清除特定武器所有者的逻辑
-
-    // 你可以在这里根据需要执行其他清除操作
+    handleDeleteRole(ctx, msg, playerId);
   });
-
-  // 更新存储
-  ext.storageSet(`playersData_${groupId}`, '{}');
-  ext.storageSet('bagData', JSON.stringify(bagData));
-  // ext.storageSet('weaponData', JSON.stringify(weaponData)); // 如果清除武器数据
 
   seal.replyToSender(ctx, msg, "所有角色卡已成功解绑并重置，现在可供新玩家抽取。");
   return seal.ext.newCmdExecuteResult(true);
@@ -1579,18 +1773,24 @@ cmdCreateRole.solve = (ctx, msg, cmdArgs) => {
         player_id: ctx.player.userId,
         player_living: 1,
         player_color: element,
+
         player_HP: selectedCard.role_HP_Max,
         player_SP: selectedCard.role_SP_Max,
         player_round: selectedCard.role_round_Max,
         player_weapon_id: 1,
+
         player_map_id: 0,
+
         player_fight_skip: 0,
         player_fight_drainLife: 0,
         player_fight_strengthen: 0,
         player_fight_weaken: 0,
         player_fight_rebound: 0,
         player_fight_hunt: 0,
-        player_fight_creativeHP: 0
+        player_fight_creativeHP: 0,
+
+        player_covert_privileges: 0,
+        player_covert_wanted: 0
     };
 
     playersData[`player${ctx.player.userId}`] = newPlayerData;  // 使用玩家ID作为键
@@ -1635,14 +1835,11 @@ cmdViewMyRole.solve = (ctx, msg, cmdArgs) => {
 
   let battleSkillsInfo = battleSkills.length > 0 ? `战斗技能:\n  - ${battleSkills.join('\n  - ')}` : "无特殊战斗状态";
 
-
-
   // 获取当前地图信息
-  const currentMap = mapData.find(map => map.map_id === playerData.player_map_id);
+  const currentMap = getMapById(playerData.player_map_id);
   let areaDescription = "无描述";
   if (currentMap) {
-    const mapStatusKey = `game_map${currentMap.map_id}`;
-    const mapStatus = gameData[mapStatusKey];
+    const mapStatus = getMapStatusByMapId(ctx, currentMap.map_id);
     areaDescription = mapStatus === 1 ? currentMap.map_discri_forbid : currentMap.map_discri_normal;
   }
 
@@ -1679,15 +1876,14 @@ cmdUnassignRole.solve = (ctx, msg, cmdArgs) => {
         return seal.ext.newCmdExecuteResult(true);
     }
 
-    const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
     const playerId = ctx.player.userId;
-    const playerData = playersData[`player${playerId}`];
+    const playerData = getPlayerDataByPlayerId(ctx, playerId);
     if (!playerData) {
         seal.replyToSender(ctx, msg, "你当前没有绑定任何角色。");
         return seal.ext.newCmdExecuteResult(true);
     }
     handleDeleteRole(ctx, msg, playerId);
-    seal.replyToSender(ctx, msg, "你的角色卡已解绑并重置。");
+    seal.replyToSender(ctx, msg, `你的角色卡<${playerData.role_name}>已解绑并重置。`);
     
     return seal.ext.newCmdExecuteResult(true);
 };
@@ -1715,6 +1911,7 @@ cmdShowMap.solve = (ctx, msg, cmdArgs) => {
     mapGrid[mapIndex] += (mapGrid[mapIndex] ? ", " : "") + (player.role_name || "Unknown Player");
   });
 
+  seal.replyToSender(ctx, msg, `[CQ:image,file=https://ajax-web-tlias.oss-cn-hangzhou.aliyuncs.com/heavenly/map.png,cache=0]`);
   let gridDisplay = "————天理地图读取中————\n";
   for (let i = 0; i < 4; i++) {
     for (let j = 0; j < 4; j++) {
@@ -1801,8 +1998,8 @@ cmdUseHealItem.solve = (ctx, msg, cmdArgs) => {
     const groupId = ctx.group.groupId;
     const itemName = cmdArgs.getArgN(1);
 
-    const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-    const playerData = playersData[`player${ctx.player.userId}`];
+    const playerId = ctx.player.userId;
+    const playerData = getPlayerDataByPlayerId(ctx, playerId);
     if (!playerData) {
         seal.replyToSender(ctx, msg, "你还没有绑定任何角色。");
         return seal.ext.newCmdExecuteResult(true);
@@ -1817,37 +2014,53 @@ cmdUseHealItem.solve = (ctx, msg, cmdArgs) => {
     }
 
     let response = `<${playerData.role_name}>：`;
-    let itemId = 0;
+    const item = itemData.find(item => item.item_name === itemName);
 
-    switch (itemName) {
-        case "日落果":
-            updatePlayerHP(ctx, msg, playerData, 4);
-            response += "你使用了日落果，+4 HP。";
-            itemId = 101;
-            break;
-        case "树莓":
-            updatePlayerHP(ctx, msg, playerData, 3);
-            response += "你使用了树莓，+3 HP。";
-            itemId = 102;
-            break;
-        case "薄荷":
-            updatePlayerSP(ctx, msg, playerData, 5);
-            response += "你使用了薄荷，+5 SP。";
-            itemId = 103;
-            break;
-        case "应急伤药":
-            updatePlayerHP(ctx, msg, playerData, 5);
-            updatePlayerHunt(ctx, msg, playerData, -5);
-            response += "你使用了应急伤药，+5 HP，解除了所有负面状态。";
-            itemId = 104;
-            break;
+    // 特殊道具使用
+    if(item && item.item_id <= 16){
+      // 加载待处理的决定数据
+      loadPendingDecisions(ctx);
+
+      // 玩家是否正在尝试进入禁区
+      if (pendingDecisions[playerId] && pendingDecisions[playerId].type == 'goForbidDecision') {
+        
+        // 玩家使用的道具是否对应
+        if(item.item_id == pendingDecisions[playerId].mapId){
+          // 成功进入禁区，清除该决定状态
+        }
+        else{
+          // 不对应，消耗该道具作为惩罚，保留该决定状态
+          response += `<${playerData.role_name}>：你于禁区边缘取出了${item.item_name}，它在你手中化作了碎片，似乎没有事情发生。
+（提示：可继续执行.use <物品名称>指令尝试使用物品，或执行.no指令不使用道具进入禁区）`;
+        }
+      }
+    }
+    else if (item && item.item_id > 100){
+      switch (item.item_id) {
+        case 101:
+          updatePlayerHP(ctx, msg, playerId, 4);
+          response += "你使用了日落果，+4 HP。";
+          break;
+        case 102:
+          updatePlayerHP(ctx, msg, playerId, 3);
+          response += "你使用了树莓，+3 HP。";
+          break;
+        case 103:
+          updatePlayerSP(ctx, msg, playerId, 5);
+          response += "你使用了薄荷，+5 SP。";
+          break;
+        case 104:
+          updatePlayerHP(ctx, msg, playerId, 5);
+          updatePlayerHunt(ctx, msg, playerId, -5);
+          response += "你使用了应急伤药，+5 HP，解除了所有负面状态。";
+          break;
         default:
-            seal.replyToSender(ctx, msg, `<${playerData.role_name}>：该道具不能使用。`);
-            return seal.ext.newCmdExecuteResult(true);
+          break;
+      }
     }
 
     // 使用道具
-    removeItemFromBag(ctx, playerData.player_id, itemId);
+    removeItemFromBag(ctx, playerData.player_id, item.item_id);
 
     seal.replyToSender(ctx, msg, response);
     return seal.ext.newCmdExecuteResult(true);
@@ -1885,11 +2098,12 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
   }
 
   const groupId = ctx.group.groupId;
-  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
-  const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = playersData[`player${ctx.player.userId}`];
+  const playerId = ctx.player.userId;
+
+  const playerData = getPlayerDataByPlayerId(ctx, playerId);
+
   if (!playerData) {
-    seal.replyToSender(ctx, msg, "无法找到玩家数据。");
+    seal.replyToSender(ctx, msg, `你还没有绑定任何角色。`);
     return seal.ext.newCmdExecuteResult(true);
   }
   // seal.replyToSender(ctx, msg, `当前玩家：${playerData.role_name}`);
@@ -1900,8 +2114,7 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
     return seal.ext.newCmdExecuteResult(true);
 }
 
-  const playerMapIndex = playerData.player_map_id - 1;
-  const mapStatus = gameData[`game_map${playerMapIndex + 1}`];
+  const playerMapIndex = playerData.player_map_id;
 
   // 判断是否行动点足够
   if (playerData.player_round <= 0){
@@ -1909,29 +2122,31 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
     return seal.ext.newCmdExecuteResult(true);
   }
     
+  const mapStatus = getMapStatusByMapId(ctx, playerMapIndex);
+
   // 非禁区探索
   if (mapStatus !== 1) {
     const randomResult = Math.floor(Math.random() * 100) + 1;
 
     if (randomResult <= 32) {
       // 1-32 获取特殊道具逻辑
-      handleSpecialItem(ctx, msg, playerData);
+      handleSpecialItem(ctx, msg, playerId);
     } 
     else if (randomResult <= 60) {
       // 37-60 获取日常物品逻辑
-      handleCommonItem(ctx, msg, playerData);
+      handleCommonItem(ctx, msg, playerId);
     } 
     else if (randomResult <= 78) {
       // 61-78 获取武器逻辑
-      handleWeaponDiscovery(ctx, msg, playerData);
+      handleWeaponDiscovery(ctx, msg, playerId);
     } 
   //   else if (randomResult <= 97) {
   //     // 78-97 遭遇其他玩家
-  //     handlePlayerEncounter(ctx, msg, playerData);
+  //     handlePlayerEncounter(ctx, msg, playerId);
   //   } 
     else if (randomResult <= 100){
       // 98-100 遭遇【天理代行】
-      handleExploreEncounterAgent(ctx, msg, playerData);
+      handleExploreEncounterAgent(ctx, msg, playerId);
     }
     else{
       seal.replyToSender(ctx, msg, `测试结果：一无所获。`);
@@ -1943,7 +2158,7 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
   }
 
   playerData.player_round -= 1;
-  ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+  updateAndSavePlayerData(ctx, playerData);
 
   return seal.ext.newCmdExecuteResult(true);
 };
@@ -1959,10 +2174,11 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
         return seal.ext.newCmdExecuteResult(true);
     }
 
-    const groupId = ctx.group.groupId;
+    const playerId = ctx.player.userId;
+
     const direction = cmdArgs.getArgN(1); // 获取方向参数
-    const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-    const playerData = playersData[`player${ctx.player.userId}`];
+    
+    const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
     if (!playerData) {
       seal.replyToSender(ctx, msg, "你还没有绑定任何角色。");
@@ -2009,33 +2225,66 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
         return seal.ext.newCmdExecuteResult(true);
     }
 
-    // 更新位置
     const Map = getMapById(playerData.player_map_id);
     const new_mapId = row * 4 + col + 1;
-    playerData.player_map_id = new_mapId; // 计算新的 map_id
-    playersData[`player${ctx.player.userId}`] = playerData;
-    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
-
     const newMap = getMapById(new_mapId);
 
-    playerData.player_round -= 1;
-    ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
+    const mapStatus = getMapStatusByMapId(ctx, new_mapId);
 
-    response = `<${playerData.role_name}>：
+    let response = ``;
+
+    // 正常移动
+    if (mapStatus !== 1) {
+      playerData.player_map_id = new_mapId; // 移动
+      playerData.player_round -= 1;
+      updateAndSavePlayerData(ctx, playerData);
+
+      response += `<${playerData.role_name}>：
 ————已从${Map.map_name}移出————
 ————已向${direction}移入${newMap.map_name}————`;
     
-    const playerColor = playerData.player_color; // 玩家的神之眼属性
-    const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
+      const playerColor = playerData.player_color; // 玩家的神之眼属性
+      const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
 
-    if (isColorInMapDescription(playerColor, mapDescription)) {
-      response += `\n在踏入${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地闪了闪`;
-    } 
+      if (isColorInMapDescription(playerColor, mapDescription)) {
+        response += `\n在踏入${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地闪了闪`;
+      } 
 
-    seal.replyToSender(ctx, msg, response);
+      seal.replyToSender(ctx, msg, response);
+    }
+
+    // 尝试进入禁区
+    else{
+      // 暗线未开启的情况
+      if(!getCovertIndex(ctx)){
+
+        // 记录玩家的决定待定状态
+        addPendingDecision(ctx, playerData.player_id, {
+          type: 'goForbidDecision',
+          mapId: new_mapId
+        });
+
+        // 暂时清除玩家所在地图id，并消耗行动点，防止同时被其他玩家触发遭遇
+        playerData.player_map_id = 0;
+        playerData.player_round -= 1;
+        updateAndSavePlayerData(ctx, playerData);
+
+        const playerColor = playerData.player_color; // 玩家的神之眼属性
+        const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
+
+        if (isColorInMapDescription(playerColor, mapDescription)) {
+          response += `\n在即将踏入禁区${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地亮起\n`;
+        } 
+
+        response += `<${playerData.role_name}>：
+【警告】检测到玩家正在尝试进入禁区，是否使用道具？
+（提示：可执行.use <道具名称> 指令选择对应道具使用，或执行.no 指令不使用任何道具进入禁区）`;
+
+        seal.replyToSender(ctx, msg, response);
+      }
+    }
     return seal.ext.newCmdExecuteResult(true);
 };
-
 ext.cmdMap['go'] = cmdGo;
 
 
