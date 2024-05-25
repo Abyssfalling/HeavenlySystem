@@ -11,8 +11,8 @@ const ruleText = `
 系统指令：
     .createworld        创建世界
     .showrole           查看角色分配
-    .distroyallroles    重置所有角色
-    .distroyworld       摧毁世界
+    .destroyallroles    重置所有角色
+    .destroyworld       摧毁世界
 
     .startgame          开始游戏
 
@@ -22,7 +22,7 @@ const ruleText = `
 
 玩家指令：
     .createrole X   创建角色，X为自选的神之眼属性
-    .distroyrole    删除角色
+    .destroyrole    删除角色
     
     .showmap    查询大地图
     .showmyrole 查询自身属性
@@ -50,7 +50,10 @@ function getMapStatusByMapId(ctx, mapId){
   const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
   const mapStatus = gameData[`game_map${mapId}`];
 
-  return mapStatus;
+  if(mapStatus == 1){
+    return true;
+  }
+  return false;
 }
 
 // 判断暗线是否开启
@@ -63,7 +66,7 @@ function getCovertIndex(ctx){
 }
 
 // 判断代行是否下放
-function getCovertIndex(ctx){
+function getAgentIndex(ctx){
   const groupId = ctx.group.groupId;
   const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
   const agentIndex = gameData[`game_agent_index`];
@@ -101,7 +104,7 @@ async function getWanted(ctx, msg){
     }
   });
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, response);
 }
 
@@ -114,28 +117,28 @@ function delay(ms) {
 // 触发暗线演出文案
 async function covertEnter(ctx, msg, playerId){
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `你立于禁区之中，手中的信物散发出柔和光晕，你看见周遭地脉生出光来，恍若流淌的黄金，旧日神明自中化形，朝你微微颔首。`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“你来了，我在这里等你很久了。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“契约之外的契约已经结束，很遗憾现在必须要告诉你残酷的事实：在这间“决斗场”里睁眼的灵魂，皆是曾在天空岛战役中无畏牺牲的先驱者。你们的苏醒与记忆的缺失并非巧合，在这里的每一个人都是七神体系的残余，拥有着“神的注视”。天理战后，我们原应同天理一并消散，将提瓦特重新还给人治。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“但天理并不止步于此，这里是法则残存所构筑的主场，厮杀会成为养分，作为重构天空岛的基石，唯一胜者将生还并荣登新的神座……而这并不是我们曾经所愿看到的。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“很遗憾，曾经并肩而战的神明仅剩我一人。时间的流逝在深渊下早已模糊不清，即使是我也不能确定到底过去了多久。其余同僚或因战死、或因磨损，已然归于尘土，消散在天地之间。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“——而你，已经来到此处，聆听完我这位“铭记者”口中的真相，我会尊重你的一切抉择。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“这位朋友，我的神之心能为你带来庇护，也是反抗天理的证明。一旦接过，祂将有所察觉。即刻起，知晓真相的你将为法则所不容，你可仍愿站在曾经的我们的身边？”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `【一枚磨损得不再光亮的岩神之心悬浮在他的手中，等待着你接过与否。】
 （提示：请使用.yes/.no指令进行选择）`);
 
@@ -149,22 +152,25 @@ async function covertEnter(ctx, msg, playerId){
 async function covertOpen(ctx, msg, playerId) {
   const groupId = ctx.group.groupId;
   const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
   // 设置暗线开启状态
   gameData[`game_covert_index`] = 1;
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“我代替提瓦特的所有，感谢你亲手选择的责任。接下来，你将在无尽的追杀中继续高举反叛的旗帜，但你无需单枪匹马。”`);
 
-  await delay(5000);
-  seal.replyToSender(ctx, msg, `“这枚摩拉，是我交予你的、寻找同行者的契约。当拥有神之眼的人选择收下这枚摩拉，他将成为你的同行之人。与此同时，仍部分摩拉散落在天理法则禁止涉足之处，拾起同样视为契约成立。”`);
+  await delay(2000);
+  seal.replyToSender(ctx, msg, `“此地一切摩拉为我的血肉所化，它们散落在天理法则禁止涉足之处，不受天理权限束缚者若拾起它们，这份契约同样成立。”`);
 
-  await delay(5000);
-  seal.replyToSender(ctx, msg, `“接下来的时间，请在保证自己存活的前提下，搜集齐剩余的神之心吧，我会在新的契约终结之处等待你们的到来。这一次，我不会再容许祂的违约了。”`);
+  await delay(2000);
+  seal.replyToSender(ctx, msg, `“接下来的时间，请在保证自己存活的前提下，集齐留在禁地的五枚神之心吧。岩神之心我已交予你，而冰神之心无需寻找，我会在新的契约终结处等待你们的到来。这一次，我不会再容许祂的违约了。”`);
 
   // 交付岩神之心
-  gameData[`game_heart6`] = playerId;
+  addItemToBag(ctx, playerId, 1006);
+  setHeartStatus(ctx, msg, playerId, 6);
+
   // 存储数据
   ext.storageSet(`gameData_${groupId}`, JSON.stringify(gameData));
   
@@ -176,29 +182,29 @@ async function covertOpen(ctx, msg, playerId) {
   updatePlayerHP(ctx, msg, playerId, playerData.role_HP_Max);
   updatePlayerSP(ctx, msg, playerId, playerData.role_SP_Max);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你获得了岩神之心，HP、SP均已回满。`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `【警告】天理管理系统检测到不明数据越权行为`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“篡改历史的僭越之人，受到旧日的蒙蔽无可救赎。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“我现将所有人的次序回归正轨，低位者无法主动向高位者举起兵刃。”`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `“拥有权限之人，我赐予你纺织命运的能力，所有禁区将为你开放。僭越之人理应受到惩罚。猎杀他们，将他们的恶名转化为你们的权能，登上新神的王座吧，被天空岛选中的人。“`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `————系统更新中，暗线开启————
 新属性：【玩家阵营】、【系统权限】、【恶名】`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `[CQ:image,file=https://ajax-web-tlias.oss-cn-hangzhou.aliyuncs.com/heavenly/covertOpen.png,cache=0]`);
 
-  await delay(5000);
+  await delay(2000);
   seal.replyToSender(ctx, msg, `————系统更新完毕，祝您游戏愉快————`);
 
   getPrivileges(ctx, msg);
@@ -274,11 +280,15 @@ function handleDeleteRole(ctx, msg, playerId){
   bagData = bagData.filter(entry => entry.bag_vs_player !== playerId);
   ext.storageSet('bagData', JSON.stringify(bagData));
 
+  // 删除玩家未处理事件
+  delete pendingDecisions[playerId];
+  savePendingDecisions(ctx);
+
   // 更新并保存玩家数据
   ext.storageSet(`playersData_${groupId}`, JSON.stringify(playersData));
 }
 
-
+// 1：火  2：水  3：风  4：雷  5：草  6：岩  7:冰
 var mapData = [
     {
       map_id: 1,
@@ -286,7 +296,7 @@ var mapData = [
       map_discri_normal: "一片宽广到望不到尽头的沼泽，这里看似平静，有着各种各样的生物来往，但小路狭窄，行走不便。",
       map_discri_forbid: "上涌的混浊水位、交错的危险植物，都似乎十分的不妙，这里的危险隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "草,冰",
-      map_heart: "草"
+      map_heart: "5"
     },
     {
       map_id: 2,
@@ -294,7 +304,7 @@ var mapData = [
       map_discri_normal: "屹立于风雪的宫殿，风霜不灭、无神垂怜，反叛天理的旗帜曾在此处高举，而今只剩下冻结冰封的血。",
       map_discri_forbid: "极寒之冰将整座宫殿封成了冰棺，却与女皇的恩赐仁慈再也无关，尖利冰凌直指每一位擅闯者，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "火,冰",
-      map_heart: "冰"
+      map_heart: "7"
     },
     {
       map_id: 3,
@@ -302,7 +312,7 @@ var mapData = [
       map_discri_normal: "至冬国广袤无垠的冰原，曾经有过深渊裂口的痕迹波动，如今野兽足迹遍布，不多时就会被风雪抹除，仿佛从未来过。",
       map_discri_forbid: "雪虐风饕，深渊张开裂口重现世间，被污染的狼横行其上，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "火,冰",
-      map_heart: "冰"
+      map_heart: "7"
     },
     {
       map_id: 4,
@@ -310,7 +320,7 @@ var mapData = [
       map_discri_normal: "安宁静谧的海边群岛，似乎高山都是蒙德曾经的山峰，被吹到此处落下了，这里虽然人迹罕至，但环境优美、气氛祥和。",
       map_discri_forbid: "来自世界外的力量封锁了这里，似乎出自一位女士之手，海水静谧、植物低垂，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "水,草",
-      map_heart: "风"
+      map_heart: "3"
     },
     {
       map_id: 5,
@@ -318,7 +328,7 @@ var mapData = [
       map_discri_normal: "一天里有三分之二的时间在降水的雨林，潮湿、闷热，几乎没有什么人工的痕迹。可以远眺到一棵巨树，那似乎是曾经的人文象征。",
       map_discri_forbid: "昏黑的天色和活跃起来的危险植物密布于此，即使是老练的冒险家也难以全身而退，它们组成了一道道防线，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "草,雷",
-      map_heart: "草"
+      map_heart: "5"
     },
     {
       map_id: 6,
@@ -326,7 +336,7 @@ var mapData = [
       map_discri_normal: "曾经上演数百年戏剧的歌剧院谢幕已久，唯有历史见证一切。",
       map_discri_forbid: "银白长钉代替铡刀砸下歌剧院，砖石倾颓、古海漫卷，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "水,岩",
-      map_heart: "水"
+      map_heart: "2"
     },
     {
       map_id: 7,
@@ -334,7 +344,7 @@ var mapData = [
       map_discri_normal: "巨型的神像还伫立在此处向远方眺望，但曾经漂亮的广场早已没有人来往，荒芜遍地、杂草丛生。",
       map_discri_forbid: "巨石滚落，神像坍塌，猛烈的暴风雪几乎埋葬了这里的一切，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "风,火,冰",
-      map_heart: "风"
+      map_heart: "3"
     },
     {
       map_id: 8,
@@ -342,7 +352,7 @@ var mapData = [
       map_discri_normal: "石柱歪斜、广场破碎。曾经的神殿已经不复昔日的荣光，在时间的长河里长出厚厚的青苔。这里荒废已久。",
       map_discri_forbid: "遗留的神殿残骸被怒号悲鸣的狂风包裹，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "风",
-      map_heart: "风"
+      map_heart: "3"
     },
     {
       map_id: 9,
@@ -350,7 +360,7 @@ var mapData = [
       map_discri_normal: "一望无垠的沙漠戈壁，嶙峋的风化石伫立于此，沙丘连绵起伏，一派荒凉又震撼的景象。",
       map_discri_forbid: "近乎没有停歇的烈日直射，高温、滚烫的沙子、缺少水源和方向标都会成为致命的因素，它们隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "水,冰",
-      map_heart: "火"
+      map_heart: "1"
     },
     {
       map_id: 10,
@@ -358,7 +368,7 @@ var mapData = [
       map_discri_normal: "水之国土的交通枢纽汇集之地，一切神与人留存的痕迹都在停止运作后逐渐消失，如今只剩下断裂的石柱。",
       map_discri_forbid: "漫涨的胎海之水吞没一切，将一切戏剧埋藏水底，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "水",
-      map_heart: "水"
+      map_heart: "2"
     },
     {
       map_id: 11,
@@ -366,7 +376,7 @@ var mapData = [
       map_discri_normal: "曾经繁荣的海港已经人去楼空。所有的房屋和设施都静默地伫立在这里，因时间的流逝变得陈旧、破败，依稀能窥见曾经的模样。",
       map_discri_forbid: "海水倒灌、水位突涨，原本就脆弱的建筑在海水的冲刷下颓唐地四分五裂，汹涌的湍流和漩涡隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "水,岩",
-      map_heart: "岩"
+      map_heart: "6"
     },
     {
       map_id: 12,
@@ -374,7 +384,7 @@ var mapData = [
       map_discri_normal: "传闻由岩枪化成的山体沉默地伫立在海面，它的一切似乎都没有变化，但却是再也无人踏足之处。",
       map_discri_forbid: "山体开裂，巨大的岩枪抵抗奔涌的潮汐，重新展露出峥嵘的模样，震荡的共鸣逸散，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "岩",
-      map_heart: "岩"
+      map_heart: "6"
     },
     {
       map_id: 13,
@@ -382,7 +392,7 @@ var mapData = [
       map_discri_normal: "一座沉寂已久的火山。这里是令曾经的冒险家闻风丧胆的无风之地，厚厚的灰烬堆积在四周，足以掩盖一切。",
       map_discri_forbid: "沉寂的火山似乎在宣泄它不知向着谁的怒火，黑烟滚滚、岩浆奔流，滚烫的温度和熔岩隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "风",
-      map_heart: "火"
+      map_heart: "1"
     },
     {
       map_id: 14,
@@ -390,7 +400,7 @@ var mapData = [
       map_discri_normal: "传闻由天星砸落造成的巨渊，有人工开采的痕迹。只是如今木制的一切框架都在时间的流逝下腐朽了，似乎踩上去就会坠入深渊。",
       map_discri_forbid: "不知从哪里疯狂涌出的黑泥淹没了这里，过往的一切岩石都被埋藏黑泥的掩盖之下，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "岩,风",
-      map_heart: "岩"
+      map_heart: "6"
     },
     {
       map_id: 15,
@@ -398,7 +408,7 @@ var mapData = [
       map_discri_normal: "一条狭长壮阔的裂谷笔直切断岛屿，雷神斩落巨蛇魔神之时造就的奇观，因雷神武艺极致「无想的一刀」命名。",
       map_discri_forbid: "失去了那一刀的镇压，崇神之乱再起，蔓延的雷祸如巨蛇盘踞整条裂谷，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "雷",
-      map_heart: "雷"
+      map_heart: "4"
     },
     {
       map_id: 16,
@@ -406,7 +416,7 @@ var mapData = [
       map_discri_normal: "被巨大的神樱树所笼罩的神社，灰尘弥漫，曾供奉的御建鸣神主尊大御所大人的神龛也快认不出外貌。",
       map_discri_forbid: "神樱曾常开不败，而今却不再永恒，枯死的巨树枝条垂落，魔神遗骸使得此处十方雷鸣不得安歇，隔绝了来自未曾受到旧日神明所注视之人的探索。",
       map_discri_eye: "雷",
-      map_heart: "雷"
+      map_heart: "4"
     }
   ];
 
@@ -430,139 +440,149 @@ function isColorInMapDescription(playerColor, mapDiscriEye) {
   return colors.includes(playerColor.trim());
 }
 
-/**
- * 功能函数：处理玩家不使用道具进入禁区
- * @param {*} ctx 
- * @param {*} playerId 
- * @param {*} mapId 
- */
-function handlePlayerEnterForbidWithoutItem(ctx, msg, playerId, mapId){
-  // const groupId = ctx.group.groupId;
-  // const playersData = JSON.parse(ext.storageGet(`playersData_${groupId}`) || '{}');
-  const playerData = getPlayerDataByPlayerId(ctx, playerId);
-  seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你选择不使用任何道具进入禁区\n`);
-
-  // 暗线未开启情况
-  if(!getCovertIndex(ctx)){
-    const playerColor = playerData.player_color; // 玩家的神之眼属性
-    const map = getMapById(mapId);
-    const mapDescription = map.map_discri_eye; // 当前地图的神之眼特定描述
-
-    // 神之眼匹配
-    if (isColorInMapDescription(playerColor, mapDescription)) {
-      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：黯淡的神之眼似是收了感召，再度亮起，你进入了禁区`);
-      return true;
-    } 
-
-    // 神之眼不匹配
-    else{
-      return false;
-    }
-  }
-}
 
 var itemData = [
-    {
-        "item_id": 1,
-        "item_name": "一枚暗淡的草神瞳",
-        "item_discribe": "虽然它似乎马上就要风化消失了，但还能在无尽的沼泽里庇护你找到生路吧。"
-    },
-    {
-        "item_id": 2,
-        "item_name": "一枚执行官的徽记",
-        "item_discribe": "标识着执行官身份的徽记，具体属于的是哪一位却无法辨识，十一位执行官总数不变，更迭者却不计其数，但只要持有它，就是为女皇效忠的证明。"
-    },
-    {
-        "item_id": 3,
-        "item_name": "一枚折断的狼牙",
-        "item_discribe": "散发着不详的深渊气息的狼牙，也许是另一个世界的入侵者，断口平整光滑，足以证明折断它的刀刃更胜一筹，也许能起到威慑作用。"
-    },
-    {
-        "item_id": 4,
-        "item_name": "一枚半损坏的嘟嘟可",
-        "item_discribe": "火芯已经拔除，它不会再爆炸了。触碰它时会有一阵小女孩的笑声模糊传来，它能带你前往和平的世外之地。"
-    },
-    {
-        "item_id": 5,
-        "item_name": "一朵奇异的彩色蘑菇",
-        "item_discribe": "不能吃，可能具有毒素，有一定躺板板的概率。携带它可以让你从容地行走在危险的雨林里。"
-    },
-    {
-        "item_id": 6,
-        "item_name": "一枚源水之滴",
-        "item_discribe": "已然暗淡的某种至纯元素凝结物，所谓天之大权的纷争在此刻失去意义，但它依旧不溶于原始胎海之中。"
-    },
-    {
-        "item_id": 7,
-        "item_name": "地脉的新芽",
-        "item_discribe": "通体银白的奇异枝芽，它能短暂修补被切断的地脉，让咆哮的暴风雪为之暂停一段时间。"
-    },
-    {
-        "item_id": 8,
-        "item_name": "布满灰尘的捕风瓶",
-        "item_discribe": "看上去似乎就要彻底损坏了，但还能再一次送你越过狂风的封锁，前往曾经千风汇聚之处。"
-    },
-    {
-        "item_id": 9,
-        "item_name": "一张地图",
-        "item_discribe": "标示着起伏的沙丘之间的绿洲所在，可以指引陷入无尽迷途的人逃出沙漠。"
-    },
-    {
-        "item_id": 10,
-        "item_name": "一枚源水之滴",
-        "item_discribe": "已然暗淡的某种至纯元素凝结物，所谓天之大权的纷争在此刻失去意义，但它依旧不溶于原始胎海之中。"
-    },
-    {
-        "item_id": 11,
-        "item_name": "一本名为《……尘游记》的书",
-        "item_discribe": "曾经装帧精美，但具体内容似乎因为被水淹过而不可深究了，但翻开扉页，它可以带你回到它所记录的故去繁荣之地。"
-    },
-    {
-        "item_id": 12,
-        "item_name": "一块岩枪碎片",
-        "item_discribe": "由相当纯粹的岩元素力构造而成，不知为什么破碎却没有消失。是谁构造出它的？它似乎能引开周身的共鸣。"
-    },
-    {
-        "item_id": 13,
-        "item_name": "一根天空之琴的弦",
-        "item_discribe": "弹奏它的诗人已然远去，而无论有风的存在与否，高天之歌依旧能为任何子民奏响。"
-    },
-    {
-        "item_id": 14,
-        "item_name": "一块流明晶石",
-        "item_discribe": "足够耀眼的蓝色晶石，它可以驱逐黑暗、净化腥臭的黑色不明物质。"
-    },
-    {
-        "item_id": 15,
-        "item_name": "将军的断刀碎片之一",
-        "item_discribe": "昔日影武者武艺极致的证明，曾经劈山断海、斩灭一切，而今碎为千片散落，也许能为你再一次斩开封锁之地。"
-    },
-    {
-        "item_id": 16,
-        "item_name": "一片枯朽的花瓣",
-        "item_discribe": "也许它曾庇佑一方，可漫长时间后，零星的粉色也快要褪尽，在它破碎之前，或许能将你带回它落下之地。"
-    },
-    {
-        "item_id": 101,
-        "item_name": "日落果",
-        "item_discribe": "使用后 +4HP",
-    },
-    {
-      "item_id": 102,
-      "item_name": "树莓",
-      "item_discribe": "使用后 +3HP",
-    },
-    {
-      "item_id": 103,
-      "item_name": "薄荷",
-      "item_discribe": "使用后 +5SP",
-    },
-    {
-      "item_id": 104,
-      "item_name": "应急伤药",
-      "item_discribe": "使用后 +5HP， 解除所有负面状态",
-    }
-
+  {
+    "item_id": 1,
+    "item_name": "一枚暗淡的草神瞳",
+    "item_discribe": "虽然它似乎马上就要风化消失了，但还能在无尽的沼泽里庇护你找到生路吧。"
+  },
+  {
+    "item_id": 2,
+    "item_name": "一枚执行官的徽记",
+    "item_discribe": "标识着执行官身份的徽记，具体属于的是哪一位却无法辨识，十一位执行官总数不变，更迭者却不计其数，但只要持有它，就是为女皇效忠的证明。"
+  },
+  {
+    "item_id": 3,
+    "item_name": "一枚折断的狼牙",
+    "item_discribe": "散发着不详的深渊气息的狼牙，也许是另一个世界的入侵者，断口平整光滑，足以证明折断它的刀刃更胜一筹，也许能起到威慑作用。"
+  },
+  {
+    "item_id": 4,
+    "item_name": "一枚半损坏的嘟嘟可",
+    "item_discribe": "火芯已经拔除，它不会再爆炸了。触碰它时会有一阵小女孩的笑声模糊传来，它能带你前往和平的世外之地。"
+  },
+  {
+    "item_id": 5,
+    "item_name": "一朵奇异的彩色蘑菇",
+    "item_discribe": "不能吃，可能具有毒素，有一定躺板板的概率。携带它可以让你从容地行走在危险的雨林里。"
+  },
+  {
+    "item_id": 6,
+    "item_name": "一枚源水之滴",
+    "item_discribe": "已然暗淡的某种至纯元素凝结物，所谓天之大权的纷争在此刻失去意义，但它依旧不溶于原始胎海之中。"
+  },
+  {
+    "item_id": 7,
+    "item_name": "地脉的新芽",
+    "item_discribe": "通体银白的奇异枝芽，它能短暂修补被切断的地脉，让咆哮的暴风雪为之暂停一段时间。"
+  },
+  {
+    "item_id": 8,
+    "item_name": "布满灰尘的捕风瓶",
+    "item_discribe": "看上去似乎就要彻底损坏了，但还能再一次送你越过狂风的封锁，前往曾经千风汇聚之处。"
+  },
+  {
+    "item_id": 9,
+    "item_name": "一张地图",
+    "item_discribe": "标示着起伏的沙丘之间的绿洲所在，可以指引陷入无尽迷途的人逃出沙漠。"
+  },
+  {
+    "item_id": 10,
+    "item_name": "一枚源水之滴",
+    "item_discribe": "已然暗淡的某种至纯元素凝结物，所谓天之大权的纷争在此刻失去意义，但它依旧不溶于原始胎海之中。"
+  },
+  {
+    "item_id": 11,
+    "item_name": "一本名为《……尘游记》的书",
+    "item_discribe": "曾经装帧精美，但具体内容似乎因为被水淹过而不可深究了，但翻开扉页，它可以带你回到它所记录的故去繁荣之地。"
+  },
+  {
+    "item_id": 12,
+    "item_name": "一块岩枪碎片",
+    "item_discribe": "由相当纯粹的岩元素力构造而成，不知为什么破碎却没有消失。是谁构造出它的？它似乎能引开周身的共鸣。"
+  },
+  {
+    "item_id": 13,
+    "item_name": "一根天空之琴的弦",
+    "item_discribe": "弹奏它的诗人已然远去，而无论有风的存在与否，高天之歌依旧能为任何子民奏响。"
+  },
+  {
+    "item_id": 14,
+    "item_name": "一块流明晶石",
+    "item_discribe": "足够耀眼的蓝色晶石，它可以驱逐黑暗、净化腥臭的黑色不明物质。"
+  },
+  {
+    "item_id": 15,
+    "item_name": "将军的断刀碎片之一",
+    "item_discribe": "昔日影武者武艺极致的证明，曾经劈山断海、斩灭一切，而今碎为千片散落，也许能为你再一次斩开封锁之地。"
+  },
+  {
+    "item_id": 16,
+    "item_name": "一片枯朽的花瓣",
+    "item_discribe": "也许它曾庇佑一方，可漫长时间后，零星的粉色也快要褪尽，在它破碎之前，或许能将你带回它落下之地。"
+  },
+  {
+    "item_id": 101,
+    "item_name": "日落果",
+    "item_discribe": "使用后 +4HP",
+  },
+  {
+    "item_id": 102,
+    "item_name": "树莓",
+    "item_discribe": "使用后 +3HP",
+  },
+  {
+    "item_id": 103,
+    "item_name": "薄荷",
+    "item_discribe": "使用后 +5SP",
+  },
+  {
+    "item_id": 104,
+    "item_name": "应急伤药",
+    "item_discribe": "使用后 +5HP， 解除所有负面状态",
+  },
+  {
+    "item_id": 105,
+    "item_name": "星螺",
+    "item_discribe": "使用后 +8SP",
+  },
+  {
+    "item_id": 106,
+    "item_name": "石珀",
+    "item_discribe": "使用后 +8HP",
+  },
+  // 0：火  1：水  2：风  3：雷  4：草  【5：冰】  6：岩
+  {
+    "item_id": 1001,
+    "item_name": "火神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  },
+  {
+    "item_id": 1002,
+    "item_name": "水神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  },
+  {
+    "item_id": 1003,
+    "item_name": "风神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  },
+  {
+    "item_id": 1004,
+    "item_name": "雷神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  },
+  {
+    "item_id": 1005,
+    "item_name": "草神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  },
+  {
+    "item_id": 1006,
+    "item_name": "岩神之心",
+    "item_discribe": "降临者之骨，天理法则现存根基之一",
+  }
 ];
   
 /**
@@ -575,98 +595,129 @@ function getItemById(itemId) {
 }
 
 
+// 查看当前神之心是否已经被获取
+function getHeartStatus(ctx, msg, heartId){
+  const groupId = ctx.group.groupId;
+  const gameData = JSON.parse(ext.storageGet(`gameData_${groupId}`) || '{}');
+  
+  if(gameData[`game_heart${heartId}`]){
+    return true;
+  }
+
+  return false;
+}
+
+
+/**
+ * 功能函数：设置当前游戏神之心持有者状态
+ * @param {*} ctx 
+ * @param {*} msg 
+ * @param {*} playerId 持有者id
+ * @param {*} heartId 神之心id
+ */
+function setHeartStatus(ctx, msg, playerId, heartId){
+  const groupId = ctx.group.groupId;
+  const gameDataRaw = ext.storageGet(`gameData_${groupId}`);
+  const gameData = JSON.parse(gameDataRaw || '{}');
+
+  gameData[`game_heart${heartId}`] = playerId;
+
+  ext.storageSet(`gameData_${groupId}`, JSON.stringify(gameData));
+}
+
+
 var weaponData = [
-    {
-        "weapon_id": 1,
-        "weapon_name": "无",
-        "weapon_attack": 0,
-        "weapon_hit": 98,
-        "weapon_broken": 100
-    },
-    {
-        "weapon_id": 2,
-        "weapon_name": "反曲弓",
-        "weapon_attack": 4,
-        "weapon_hit": 82,
-        "weapon_broken": 98
-    },
-    {
-        "weapon_id": 3,
-        "weapon_name": "以理服人",
-        "weapon_attack": 5,
-        "weapon_hit": 80,
-        "weapon_broken": 95
-    },
-    {
-        "weapon_id": 4,
-        "weapon_name": "黎明神剑",
-        "weapon_attack": 4,
-        "weapon_hit": 85,
-        "weapon_broken": 97
-    },
-    {
-        "weapon_id": 5,
-        "weapon_name": "黑缨枪",
-        "weapon_attack": 4,
-        "weapon_hit": 90,
-        "weapon_broken": 96
-    },
-    {
-        "weapon_id": 6,
-        "weapon_name": "讨龙",
-        "weapon_attack": 3,
-        "weapon_hit": 95,
-        "weapon_broken": 99
-    },
-    {
-        "weapon_id": 7,
-        "weapon_name": "弓藏",
-        "weapon_attack": 5,
-        "weapon_hit": 88,
-        "weapon_broken": 96
-    },
-    {
-        "weapon_id": 8,
-        "weapon_name": "螭骨",
-        "weapon_attack": 6,
-        "weapon_hit": 93,
-        "weapon_broken": 95
-    },
-    {
-        "weapon_id": 9,
-        "weapon_name": "试作斩岩",
-        "weapon_attack": 5,
-        "weapon_hit": 97,
-        "weapon_broken": 97
-    },
-    {
-        "weapon_id": 10,
-        "weapon_name": "千岩长枪",
-        "weapon_attack": 5,
-        "weapon_hit": 92,
-        "weapon_broken": 97
-    },
-    {
-        "weapon_id": 11,
-        "weapon_name": "昭心",
-        "weapon_attack": 4,
-        "weapon_hit": 96,
-        "weapon_broken": 98
-    },
-    {
-        "weapon_id": 12,
-        "weapon_name": "天空之刃",
-        "weapon_attack": 6,
-        "weapon_hit": 95,
-        "weapon_broken": 99
-    },
-    {
-        "weapon_id": 13,
-        "weapon_name": "破碎的极星",
-        "weapon_attack": 7,
-        "weapon_hit": 95,
-        "weapon_broken": 100
-    }
+  {
+      "weapon_id": 1,
+      "weapon_name": "无",
+      "weapon_attack": 0,
+      "weapon_hit": 98,
+      "weapon_broken": 100
+  },
+  {
+      "weapon_id": 2,
+      "weapon_name": "反曲弓",
+      "weapon_attack": 4,
+      "weapon_hit": 82,
+      "weapon_broken": 98
+  },
+  {
+      "weapon_id": 3,
+      "weapon_name": "以理服人",
+      "weapon_attack": 5,
+      "weapon_hit": 80,
+      "weapon_broken": 95
+  },
+  {
+      "weapon_id": 4,
+      "weapon_name": "黎明神剑",
+      "weapon_attack": 4,
+      "weapon_hit": 85,
+      "weapon_broken": 97
+  },
+  {
+      "weapon_id": 5,
+      "weapon_name": "黑缨枪",
+      "weapon_attack": 4,
+      "weapon_hit": 90,
+      "weapon_broken": 96
+  },
+  {
+      "weapon_id": 6,
+      "weapon_name": "讨龙",
+      "weapon_attack": 3,
+      "weapon_hit": 95,
+      "weapon_broken": 99
+  },
+  {
+      "weapon_id": 7,
+      "weapon_name": "弓藏",
+      "weapon_attack": 5,
+      "weapon_hit": 88,
+      "weapon_broken": 96
+  },
+  {
+      "weapon_id": 8,
+      "weapon_name": "螭骨",
+      "weapon_attack": 6,
+      "weapon_hit": 93,
+      "weapon_broken": 95
+  },
+  {
+      "weapon_id": 9,
+      "weapon_name": "试作斩岩",
+      "weapon_attack": 5,
+      "weapon_hit": 97,
+      "weapon_broken": 97
+  },
+  {
+      "weapon_id": 10,
+      "weapon_name": "千岩长枪",
+      "weapon_attack": 5,
+      "weapon_hit": 92,
+      "weapon_broken": 97
+  },
+  {
+      "weapon_id": 11,
+      "weapon_name": "昭心",
+      "weapon_attack": 4,
+      "weapon_hit": 96,
+      "weapon_broken": 98
+  },
+  {
+      "weapon_id": 12,
+      "weapon_name": "天空之刃",
+      "weapon_attack": 6,
+      "weapon_hit": 95,
+      "weapon_broken": 99
+  },
+  {
+      "weapon_id": 13,
+      "weapon_name": "破碎的极星",
+      "weapon_attack": 7,
+      "weapon_hit": 95,
+      "weapon_broken": 100
+  }
 ];
 
 /**
@@ -1028,49 +1079,66 @@ function confirmDecision(ctx, msg) {
     if (pendingDecisions[playerId]) {
       const decisionType = pendingDecisions[playerId].type;
       switch (decisionType) {
-          case 'weaponDecision':
-            const weaponId = pendingDecisions[playerId].weaponId;
+        case 'weaponDecision':
+          const weaponId = pendingDecisions[playerId].weaponId;
             
-            // 执行更换武器
-            updatePlayerWeapon(ctx, msg, weaponId);
+          // 执行更换武器
+          updatePlayerWeapon(ctx, msg, weaponId);
 
-            // 清除玩家的待决定状态
-            delete pendingDecisions[playerId];
-            break;
+          // 清除玩家的待决定状态
+          delete pendingDecisions[playerId];
+          savePendingDecisions(ctx); // 保存更新后的待决定数据
+          break;
 
-          case 'eyeDecision':
-            const weaponMessage = `<${playerData.role_name}>：
+        case 'eyeDecision':
+          const weaponMessage = `<${playerData.role_name}>：
 有水流自【天理代行】的指间流转而出，在你反应过来前被赋予了武器的形状，随后冰霜冻结，刀刃铸锋。
 ————武器已赋予————
 获取武器：天空之刃`;
-            seal.replyToSender(ctx, msg, weaponMessage);
-            // 清除玩家的待决定状态
-            delete pendingDecisions[playerId];
+          seal.replyToSender(ctx, msg, weaponMessage);
 
-            //隐藏计数：权限+1
-            playerData.player_covert_privileges += 1;
+          //隐藏计数：权限+1
+          playerData.player_covert_privileges += 1;
           
-            // 修改玩家数据
-            updatePlayerWeapon(ctx, msg, 12);
-            updatePlayerEyeColor(ctx, msg, validElements[0]);
+          // 修改玩家数据
+          updatePlayerWeapon(ctx, msg, 12);
+          updatePlayerEyeColor(ctx, msg, validElements[0]);
       
-            const goodbyeMessage = `【天理代行】收走了你的神之眼，一言不发转身离去。
+          const goodbyeMessage = `【天理代行】收走了你的神之眼，一言不发转身离去。
 ————神之眼已收缴————`;
-            seal.replyToSender(ctx, msg, goodbyeMessage);
-            
-            break;
+          seal.replyToSender(ctx, msg, goodbyeMessage);
           
-          case 'covertDecision':
-            covertOpen(ctx, msg, playerId);
-            // 清除玩家的待决定状态
-            delete pendingDecisions[playerId];
-            break;
+          // 清除玩家的待决定状态
+          delete pendingDecisions[playerId];
+          savePendingDecisions(ctx); 
+          break;
+          
+        case 'covertDecision':
+          covertOpen(ctx, msg, playerId);
 
-          default:
-              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前决定不需要执行.yes指令响应。`);
-              break;
+          // 清除玩家的待决定状态
+          delete pendingDecisions[playerId];
+          savePendingDecisions(ctx); // 保存更新后的待决定数据
+          break;
+
+        case 'changeDecision':
+          seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你拾起了未竟契约的一部分，与此同时，天理的通缉榜上出现了你的名字。`);
+
+          playerData.player_covert_wanted = 1;
+          updateAndSavePlayerData(ctx, playerData);
+
+          getWanted(ctx, msg);
+
+          // 清除玩家的待决定状态
+          delete pendingDecisions[playerId];
+          savePendingDecisions(ctx); 
+          break;
+        
+        default:
+          seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前决定不需要执行.yes指令响应。`);
+          break;
       }
-      savePendingDecisions(ctx); // 保存更新后的待决定数据
+      
   } 
   else {
       seal.replyToSender(ctx, msg, `<${playerData.role_name}>：没有待处理的决定或回复已失效。`);
@@ -1101,6 +1169,7 @@ function rejectDecision(ctx, msg) {
 
               // 清除玩家的待决定状态
               delete pendingDecisions[playerId];
+              savePendingDecisions(ctx); 
               break;
 
             case 'eyeDecision':
@@ -1109,6 +1178,9 @@ function rejectDecision(ctx, msg) {
  “一个问题。”祂说。
  “你可以问我一个问题。
 （系统提示：可使用.ask <询问内容> 指令发问)”`;
+              // 清除玩家的待决定状态
+              delete pendingDecisions[playerId];
+              savePendingDecisions(ctx); 
 
               // 记录玩家的决定待定状态
               addPendingDecision(ctx, playerId, {
@@ -1120,29 +1192,83 @@ function rejectDecision(ctx, msg) {
             
             case 'goForbidDecision':
               // 执行不使用道具的禁区进入判断
-              if(handlePlayerEnterForbidWithoutItem(ctx, msg, playerId, pendingDecisions[playerId].mapId)){
-                // 进入禁区
+              const playerColor = playerData.player_color; // 玩家的神之眼属性
+              const map = getMapById(pendingDecisions[playerId].mapId);
+              const mapDescription = map.map_discri_eye; // 当前地图的神之眼特定描述
+
+              // 神之眼匹配
+              if(isColorInMapDescription(playerColor, mapDescription)){
+                
                 playerData.player_map_id = pendingDecisions[playerId].mapId;
                 updateAndSavePlayerData(ctx, playerData);
 
-                // 清除玩家的待决定状态
-                delete pendingDecisions[playerId];
-
-                // 执行暗线开启函数    
-                covertEnter(ctx, msg, playerId);
+                // 暗线未开启，该玩家为首个使用神之眼进入禁区的玩家
+                if(!getCovertIndex(ctx)){
+                  // 执行暗线开启函数    
+                  covertEnter(ctx, msg, playerId);
+                }
+                //暗线已开启
+                else{
+                  // 玩家不属于旧阵营且不拥有天理权限
+                  if(!playerData.player_covert_wanted && !playerData.player_covert_privileges){
+                    // 记录玩家的决定待定状态
+                    addPendingDecision(ctx, playerId, {
+                    type: 'changeDecision'
+                  });
+                    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：一枚摩拉静静地躺在禁地之中，等待你的选择。
+（系统提示：使用.yes/.no选择是否拾起摩拉）`);
+                  }
+                }
               }
+              
+              // 神之眼不匹配，但暗线已开启，玩家隶属新阵营，拥有系统权限保护
+              else if(getCovertIndex(ctx) && playerData.player_covert_privileges){
+                playerData.player_map_id = pendingDecisions[playerId].mapId;
+                updateAndSavePlayerData(ctx, playerData);
+
+                seal.replyToSender(ctx, msg, `<${playerData.role_name}>天理赋予的权限运作，你进入了禁区。`);
+              }
+
+              // 神之眼不匹配，但暗线已开启，玩家隶属旧阵营，拥有玉璋护盾保护
+              else if(getCovertIndex(ctx) && playerData.player_covert_wanted){
+                playerData.player_map_id = pendingDecisions[playerId].mapId;
+                updateAndSavePlayerData(ctx, playerData);
+
+                seal.replyToSender(ctx, msg, `<${playerData.role_name}>玉璋护盾在周身聚拢，你进入了禁区。`);
+              }
+
+              // 神之眼不匹配，玩家死亡
               else{
                 seal.replyToSender(ctx, msg, `玩家<${playerData.role_name}>擅闯禁区，死亡。`);
                 handlePlayerDeath(ctx, msg, playerId);
               }
+              
+              // 清除玩家的待决定状态
+              delete pendingDecisions[playerId];
+              savePendingDecisions(ctx); 
               break;
               
+            case 'covertDecision':
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你转身离去，而身后旧神未发一言。`);
+              
+              // 清除玩家的待决定状态
+              delete pendingDecisions[playerId];
+              savePendingDecisions(ctx); 
+              break;
+
+            case 'changeDecision':
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你将那枚摩拉留在原地，转身离去。`);
+              
+              // 清除玩家的待决定状态
+              delete pendingDecisions[playerId];
+              savePendingDecisions(ctx); 
+              break;
 
             default:
               seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前决定不需要执行.no指令响应。`);
               break;
         }
-        savePendingDecisions(ctx); // 保存更新后的待决定数据
+        
     } 
     else {
         seal.replyToSender(ctx, msg, `<${playerData.role_name}>：没有待处理的决定或回复已失效。`);
@@ -1156,34 +1282,68 @@ function rejectDecision(ctx, msg) {
  * @param {Object} msg 消息对象
  * @param {Object} playerData 玩家数据
  */
-function handleSpecialItem(ctx, msg, playerId) {
+function handleSpecialItem(ctx, msg, playerId, mapStatus) {
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
+
+  // 禁区探索且为旧阵营玩家，获取神之心
+  if(mapStatus && playerData.player_covert_wanted){
+
+    const map = getMapById(playerData.player_map_id);
+
+    const heartId = parseInt(map.map_heart, 10);
+
+    const itemId = heartId + 1000;
+    const item = getItemById(itemId);
+
+
+    // 查看当前国家神之心是否已有玩家获取
+    if(heartId == 7){
+      // 冰神之心
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：冰神之心不在此地，无需寻找。`);
+    }
+
+    else if(getHeartStatus(ctx, msg, heartId)){
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：${item.item_name}已被获取。`);
+    }
+
+    else{
+      addItemToBag(ctx, playerId, itemId);
+      setHeartStatus(ctx, msg, playerId, heartId);
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：一枚 ${item.item_name}落在你的手中。`);
+    }
+    return;
+  }
+
   const itemID = Math.floor(Math.random() * 16) + 1;
   const item = getItemById(itemID);
 
-  if (!item) {
-      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：未找到对应的特殊道具。`);
-      return;
-  }
-
   addItemToBag(ctx, playerId, itemID);
-
   seal.replyToSender(ctx, msg, `<${playerData.role_name}>：你获得了特殊道具: ${item.item_name} —— ${item.item_discribe}`);
 }
 
 
 /**
-   * 探索函数：非禁区 17~50 处理日常物品获取
-   * @param {Object} ctx 上下文对象
-   * @param {Object} msg 消息对象  
-   * @param {Object} playerData 玩家数据
-   * @param {number} randomResult 随机数结果
-   */
-function handleCommonItem(ctx, msg, playerId) {
+ * 探索函数：非禁区/禁区 17~50 处理日常物品获取
+ * @param {*} ctx 
+ * @param {*} msg 
+ * @param {*} playerId 
+ * @param {*} mapStatus 
+ */
+function handleCommonItem(ctx, msg, playerId, mapStatus) {
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
-  const itemID = Math.floor(Math.random() * 4) + 101;
+  let itemID = 0;
+
+  // 非禁区
+  if(!mapStatus){
+    itemID = Math.floor(Math.random() * 4) + 101;
+  }
+  // 禁区
+  else{
+    itemID = Math.floor(Math.random() * 2) + 105;
+  }
+
   const item = getItemById(itemID);
-  let response = `<${playerData.role_name}>：你获得了恢复类食物：${item.item_name}。`;
+  let response = `<${playerData.role_name}>：你获得了恢复类物品：${item.item_name}。`;
 
   response += `${item.item_discribe}`;
 
@@ -1194,16 +1354,25 @@ function handleCommonItem(ctx, msg, playerId) {
 }
 
 /**
-   * 探索函数：非禁区 51~77 处理武器发现逻辑
-   * @param {Object} ctx 上下文对象
-   * @param {Object} msg 消息对象
-   * @param {Object} playerData 玩家数据
-   * @param {number} randomResult 随机结果，用于确定发现哪种武器
-   */
-function handleWeaponDiscovery(ctx, msg, playerId) {
+ * 探索函数：非禁区/禁区 51~77 处理武器发现逻辑
+ * @param {*} ctx 
+ * @param {*} msg 
+ * @param {*} playerId 
+ * @param {*} mapStatus 
+ */
+function handleWeaponDiscovery(ctx, msg, playerId, mapStatus) {
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
 
-  let weaponId = Math.floor(Math.random() * 5) + 2;
+  let weaponId = 0;
+
+  // 非禁区武器
+  if(!mapStatus){
+    weaponId = Math.floor(Math.random() * 5) + 2;
+  }
+  // 禁区武器
+  else{
+    weaponId = Math.floor(Math.random() * 5) + 7;
+  }
 
   // 获取武器信息
   const weapon = weaponData.find(w => w.weapon_id === weaponId);
@@ -1223,11 +1392,11 @@ function handleWeaponDiscovery(ctx, msg, playerId) {
 
 
 /**
-   * 探索函数：非禁区 78~97 处理遭遇玩家逻辑
-   * @param {Object} ctx 上下文对象
-   * @param {Object} msg 消息对象
-   * @param {Object} playerData 玩家数据
-   */
+ * 探索函数：非禁区/禁区 78~97 处理遭遇玩家逻辑
+ * @param {*} ctx 
+ * @param {*} msg 
+ * @param {*} playerId 
+ */
 function handlePlayerEncounter(ctx, msg, playerId) {
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
     
@@ -1260,49 +1429,59 @@ function handlePlayerEncounter(ctx, msg, playerId) {
   
 
 /**
-   * 探索函数：非禁区 98~100 遭遇天理代行事件
-   * @param {Object} ctx 上下文对象
-   * @param {Object} msg 消息对象
-   * @param {Object} playerData 玩家数据
-   */
+ * 探索函数：非禁区/禁区 98~100 遭遇天理代行事件
+ * @param {*} ctx 
+ * @param {*} msg 
+ * @param {*} playerId 
+ */
 function handleExploreEncounterAgent(ctx, msg, playerId) {
   const playerData = getPlayerDataByPlayerId(ctx, playerId);
   let promptMessage = ``;
 
-  // 暗线未开启
-  if(!getCovertIndex(ctx)){
-    promptMessage += `<${playerData.role_name}>：
-————兜帽遮面的【天理代行】降临在你的面前————\n`;
-
-    // 玩家持有神之眼
-    if(playerData.player_color != '无'){
-      promptMessage += `【天理代行】向你伸出手，你发觉祂在看你的神之眼。
-是否交出神之眼？请回复指令.yes/.no`;
-
-      // 记录玩家的决定待定状态
-      addPendingDecision(ctx, playerData.player_id, {
-        type: 'eyeDecision'
-      });
-    }
-
-    // 玩家已交出神之眼
-    else{
-      promptMessage += `【天理代行】向你伸出手，像是对你勇气与幸运的嘉许。
-HP+20，SP+20
-————【天理代行】一言不发地转身离去————`
-      updatePlayerHP(ctx, playerId, 20);
-    }
-  seal.replyToSender(ctx, msg, promptMessage);
-  }
-
   // 暗线已开启
-  else{
-    // 玩家属于旧阵营
-    promptMessage += `你猛地抬头，黑红方块从天而降，所有的反抗在神罚前看起来都是妄想，在你来得及反应前的瞬间便已迫至面前——
+  if(getCovertIndex(ctx)){
+    // 代行已下放
+    if(getAgentIndex(ctx)){
+      seal.replyToSender(ctx, msg, `<${playerData.role_name}>：但是谁也没有来。`);
+      return;
+    }
+
+    // 代行未下放，玩家在恶名榜上
+    if(playerData.player_covert_wanted){
+      promptMessage += `你猛地抬头，黑红方块从天而降，所有的反抗在神罚前看起来都是妄想，在你来得及反应前的瞬间便已迫至面前——
 ——神罚停下了。因一对水凝冰铸的刀刃。
 你看见遮面的兜帽滑落，露出【天理代行】的面容，无光眼瞳、至冬样貌，过量的鲜血自祂——不，他的四肢关节溢出，顺着无形丝线一滴一滴往下滑落。
 而后那人与神罚一并消失在空中，万籁俱寂，仿佛从未有人来过。只有地上残留血迹昭示着，这一切并不是你的幻觉。`
+      seal.replyToSender(ctx, msg, promptMessage);
+      return;
+    }
   }
+
+  promptMessage += `<${playerData.role_name}>：
+————兜帽遮面的【天理代行】降临在你的面前————\n`;
+
+  // 玩家持有神之眼
+  if(playerData.player_color != '无'){
+    promptMessage += `【天理代行】向你伸出手，你发觉祂在看你的神之眼。
+是否交出神之眼？请回复指令.yes/.no`;
+
+    // 记录玩家的决定待定状态
+    addPendingDecision(ctx, playerData.player_id, {
+      type: 'eyeDecision'
+    });
+  }
+
+  // 玩家已交出神之眼
+  else{
+    promptMessage += `【天理代行】向你伸出手，像是对你勇气与幸运的嘉许。
+HP+20，SP+20
+————【天理代行】一言不发地转身离去————`
+    updatePlayerHP(ctx, playerId, 20);
+  }
+  
+  seal.replyToSender(ctx, msg, promptMessage);
+
+  return;
 }
     
 
@@ -1469,8 +1648,8 @@ ext.cmdMap['showrole'] = cmdViewRole;
 
 
 const cmdForceUnassignRole = seal.ext.newCmdItemInfo();
-cmdForceUnassignRole.name = 'forcedistroyrole';
-cmdForceUnassignRole.help = '系统指令： .forcedistroyrole <ID> 重置该角色';
+cmdForceUnassignRole.name = 'forcedestroyrole';
+cmdForceUnassignRole.help = '系统指令： .forcedestroyrole <ID> 重置该角色';
 cmdForceUnassignRole.solve = (ctx, msg, cmdArgs) => {
   if (!ctx.group || !ctx.group.groupId) {
     seal.replyToSender(ctx, msg, "此命令只能在群聊中使用。");
@@ -1497,12 +1676,12 @@ cmdForceUnassignRole.solve = (ctx, msg, cmdArgs) => {
   seal.replyToSender(ctx, msg, `玩家${targetPlayerId}的角色卡已被强制解绑并重置。`);
   return seal.ext.newCmdExecuteResult(true);
 };
-ext.cmdMap['forcedistroyrole'] = cmdForceUnassignRole;
+ext.cmdMap['forcedestroyrole'] = cmdForceUnassignRole;
 
 
 const cmdResetAllRoles = seal.ext.newCmdItemInfo();
-cmdResetAllRoles.name = 'distroyallroles';
-cmdResetAllRoles.help = '系统指令： .distoryallroles 重置所有角色';
+cmdResetAllRoles.name = 'destroyallroles';
+cmdResetAllRoles.help = '系统指令： .destoryallroles 重置所有角色';
 cmdResetAllRoles.solve = (ctx, msg, cmdArgs) => {
   if (!ctx.group || !ctx.group.groupId) {
     seal.replyToSender(ctx, msg, "此命令只能在群聊中使用。");
@@ -1526,12 +1705,12 @@ cmdResetAllRoles.solve = (ctx, msg, cmdArgs) => {
   seal.replyToSender(ctx, msg, "所有角色卡已成功解绑并重置，现在可供新玩家抽取。");
   return seal.ext.newCmdExecuteResult(true);
 };
-ext.cmdMap['distroyallroles'] = cmdResetAllRoles;
+ext.cmdMap['destroyallroles'] = cmdResetAllRoles;
 
 
 const cmdDestroyWorld = seal.ext.newCmdItemInfo();
-cmdDestroyWorld.name = 'distroyworld';
-cmdDestroyWorld.help = '系统指令： .distroyworld 销毁该世界';
+cmdDestroyWorld.name = 'destroyworld';
+cmdDestroyWorld.help = '系统指令： .destroyworld 销毁该世界';
 cmdDestroyWorld.solve = (ctx, msg, cmdArgs) => {
   if (!ctx.group || !ctx.group.groupId) {
     seal.replyToSender(ctx, msg, "当前环境不满足指令条件。");
@@ -1561,7 +1740,7 @@ cmdDestroyWorld.solve = (ctx, msg, cmdArgs) => {
   seal.replyToSender(ctx, msg, "——世界销毁成功，所有动态数据已重置——");
   return seal.ext.newCmdExecuteResult(true);
 };
-ext.cmdMap['distroyworld'] = cmdDestroyWorld;
+ext.cmdMap['destroyworld'] = cmdDestroyWorld;
 
 
 const cmdStartGame = seal.ext.newCmdItemInfo();
@@ -1840,7 +2019,7 @@ cmdViewMyRole.solve = (ctx, msg, cmdArgs) => {
   let areaDescription = "无描述";
   if (currentMap) {
     const mapStatus = getMapStatusByMapId(ctx, currentMap.map_id);
-    areaDescription = mapStatus === 1 ? currentMap.map_discri_forbid : currentMap.map_discri_normal;
+    areaDescription = mapStatus === true ? currentMap.map_discri_forbid : currentMap.map_discri_normal;
   }
 
   const playerInfo = `
@@ -1861,8 +2040,8 @@ ext.cmdMap['showmyrole'] = cmdViewMyRole;
 
 
 const cmdUnassignRole = seal.ext.newCmdItemInfo();
-cmdUnassignRole.name = 'distroyrole';
-cmdUnassignRole.help = '玩家指令： .distroyrole 重置当前角色';
+cmdUnassignRole.name = 'destroyrole';
+cmdUnassignRole.help = '玩家指令： .destroyrole 重置当前角色';
 cmdUnassignRole.solve = (ctx, msg, cmdArgs) => {
     if (!ctx.group || !ctx.group.groupId) {
         seal.replyToSender(ctx, msg, "此命令只能在群聊中使用。");
@@ -1887,7 +2066,7 @@ cmdUnassignRole.solve = (ctx, msg, cmdArgs) => {
     
     return seal.ext.newCmdExecuteResult(true);
 };
-ext.cmdMap['distroyrole'] = cmdUnassignRole;
+ext.cmdMap['destroyrole'] = cmdUnassignRole;
 
 
 
@@ -2026,41 +2205,77 @@ cmdUseHealItem.solve = (ctx, msg, cmdArgs) => {
         
         // 玩家使用的道具是否对应
         if(item.item_id == pendingDecisions[playerId].mapId){
+          playerData.player_map_id = pendingDecisions[playerId].mapId;
+          updateAndSavePlayerData(ctx, playerData);
+
           // 成功进入禁区，清除该决定状态
+          delete pendingDecisions[playerId];
+          savePendingDecisions(ctx);
+
+          //暗线未开启，该玩家未拥有权限
+          if(!getCovertIndex(ctx) && !playerData.player_covert_privileges){
+            covertEnter(ctx, msg, playerId);
+          }
+
+          // 暗线开启，玩家不属于旧阵营且不拥有天理权限
+          else if(getCovertIndex(ctx) && !playerData.player_covert_privileges && !playerData.player_covert_wanted){
+            if(!playerData.player_covert_wanted && !playerData.player_covert_privileges){
+              // 记录玩家的决定待定状态
+              addPendingDecision(ctx, playerId, {
+              type: 'changeDecision'
+            });
+            
+              seal.replyToSender(ctx, msg, `<${playerData.role_name}>：一枚摩拉静静地躺在禁地之中，等待你的选择。
+（系统提示：使用.yes/.no选择是否拾起摩拉）`);
+              return;
+            }
+          }
         }
         else{
           // 不对应，消耗该道具作为惩罚，保留该决定状态
-          response += `<${playerData.role_name}>：你于禁区边缘取出了${item.item_name}，它在你手中化作了碎片，似乎没有事情发生。
+          response += `<${playerData.role_name}>：你于禁区边缘取出了${item.item_name}，它在你手中化作了碎片，无事发生。
 （提示：可继续执行.use <物品名称>指令尝试使用物品，或执行.no指令不使用道具进入禁区）`;
         }
+        // 使用道具
+        removeItemFromBag(ctx, playerData.player_id, item.item_id);
+      }
+      else{
+        response += `你将它放在手心端详，无事发生。`;
       }
     }
     else if (item && item.item_id > 100){
       switch (item.item_id) {
         case 101:
           updatePlayerHP(ctx, msg, playerId, 4);
-          response += "你使用了日落果，+4 HP。";
+          response += `你使用了${item.item_name}，+4 HP。`;
           break;
         case 102:
           updatePlayerHP(ctx, msg, playerId, 3);
-          response += "你使用了树莓，+3 HP。";
+          response += `你使用了${item.item_name}，+3 HP。`;
           break;
         case 103:
           updatePlayerSP(ctx, msg, playerId, 5);
-          response += "你使用了薄荷，+5 SP。";
+          response += `你使用了${item.item_name}，+5 SP。`;
           break;
         case 104:
           updatePlayerHP(ctx, msg, playerId, 5);
           updatePlayerHunt(ctx, msg, playerId, -5);
-          response += "你使用了应急伤药，+5 HP，解除了所有负面状态。";
+          response += `你使用了${item.item_name}，+5 HP，解除了所有负面状态。`;
+          break;
+        case 105:
+          updatePlayerSP(ctx, msg, playerId, 5);
+          response += `你使用了${item.item_name}，+5 SP。`;
+          break;
+        case 106:
+          updatePlayerHP(ctx, msg, playerId, 5);
+          response += `你使用了${item.item_name}，+5 HP。`;
           break;
         default:
           break;
       }
+      // 使用道具
+      removeItemFromBag(ctx, playerData.player_id, item.item_id);
     }
-
-    // 使用道具
-    removeItemFromBag(ctx, playerData.player_id, item.item_id);
 
     seal.replyToSender(ctx, msg, response);
     return seal.ext.newCmdExecuteResult(true);
@@ -2124,40 +2339,34 @@ cmdExplore.solve = (ctx, msg, cmdArgs) => {
     
   const mapStatus = getMapStatusByMapId(ctx, playerMapIndex);
 
-  // 非禁区探索
-  if (mapStatus !== 1) {
-    const randomResult = Math.floor(Math.random() * 100) + 1;
+  const randomResult = Math.floor(Math.random() * 100) + 1;
 
-    if (randomResult <= 32) {
-      // 1-32 获取特殊道具逻辑
-      handleSpecialItem(ctx, msg, playerId);
-    } 
-    else if (randomResult <= 60) {
-      // 37-60 获取日常物品逻辑
-      handleCommonItem(ctx, msg, playerId);
-    } 
-    else if (randomResult <= 78) {
-      // 61-78 获取武器逻辑
-      handleWeaponDiscovery(ctx, msg, playerId);
-    } 
+  // 非禁区探索
+  if (randomResult <= 32) {
+    // 1-32 获取特殊道具逻辑
+    handleSpecialItem(ctx, msg, playerId, mapStatus);
+  } 
+  else if (randomResult <= 60) {
+    // 37-60 获取日常物品逻辑
+    handleCommonItem(ctx, msg, playerId, mapStatus);
+  } 
+  else if (randomResult <= 78) {
+    // 61-78 获取武器逻辑
+    handleWeaponDiscovery(ctx, msg, playerId, mapStatus);
+  } 
   //   else if (randomResult <= 97) {
   //     // 78-97 遭遇其他玩家
   //     handlePlayerEncounter(ctx, msg, playerId);
   //   } 
-    else if (randomResult <= 100){
-      // 98-100 遭遇【天理代行】
-      handleExploreEncounterAgent(ctx, msg, playerId);
-    }
-    else{
-      seal.replyToSender(ctx, msg, `测试结果：一无所获。`);
-    }
-
-  } 
-  else {
-    seal.replyToSender(ctx, msg, `<${playerData.role_name}>：当前区域是禁区。`);
+  else if (randomResult <= 100){
+    // 98-100 遭遇【天理代行】
+    handleExploreEncounterAgent(ctx, msg, playerId);
+  }
+  else{
+    seal.replyToSender(ctx, msg, `测试结果：一无所获。`);
   }
 
-  playerData.player_round -= 1;
+  // playerData.player_round -= 1;
   updateAndSavePlayerData(ctx, playerData);
 
   return seal.ext.newCmdExecuteResult(true);
@@ -2234,9 +2443,9 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
     let response = ``;
 
     // 正常移动
-    if (mapStatus !== 1) {
+    if (!mapStatus) {
       playerData.player_map_id = new_mapId; // 移动
-      playerData.player_round -= 1;
+      // playerData.player_round -= 1;
       updateAndSavePlayerData(ctx, playerData);
 
       response += `<${playerData.role_name}>：
@@ -2255,33 +2464,29 @@ cmdGo.solve = (ctx, msg, cmdArgs) => {
 
     // 尝试进入禁区
     else{
-      // 暗线未开启的情况
-      if(!getCovertIndex(ctx)){
+      // 记录玩家的决定待定状态
+      addPendingDecision(ctx, playerData.player_id, {
+        type: 'goForbidDecision',
+        mapId: new_mapId
+      });
 
-        // 记录玩家的决定待定状态
-        addPendingDecision(ctx, playerData.player_id, {
-          type: 'goForbidDecision',
-          mapId: new_mapId
-        });
+      // 暂时清除玩家所在地图id，并消耗行动点，防止同时被其他玩家触发遭遇
+      playerData.player_map_id = 0;
+      // playerData.player_round -= 1;
+      updateAndSavePlayerData(ctx, playerData);
 
-        // 暂时清除玩家所在地图id，并消耗行动点，防止同时被其他玩家触发遭遇
-        playerData.player_map_id = 0;
-        playerData.player_round -= 1;
-        updateAndSavePlayerData(ctx, playerData);
+      const playerColor = playerData.player_color; // 玩家的神之眼属性
+      const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
 
-        const playerColor = playerData.player_color; // 玩家的神之眼属性
-        const mapDescription = newMap.map_discri_eye; // 当前地图的神之眼特定描述
+      if (isColorInMapDescription(playerColor, mapDescription)) {
+        response += `\n在即将踏入禁区${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地亮起\n`;
+      } 
 
-        if (isColorInMapDescription(playerColor, mapDescription)) {
-          response += `\n在即将踏入禁区${newMap.map_name}的瞬间，你发现你随身的${playerColor}神之眼微弱地亮起\n`;
-        } 
-
-        response += `<${playerData.role_name}>：
+      response += `<${playerData.role_name}>：
 【警告】检测到玩家正在尝试进入禁区，是否使用道具？
 （提示：可执行.use <道具名称> 指令选择对应道具使用，或执行.no 指令不使用任何道具进入禁区）`;
 
-        seal.replyToSender(ctx, msg, response);
-      }
+      seal.replyToSender(ctx, msg, response);
     }
     return seal.ext.newCmdExecuteResult(true);
 };
